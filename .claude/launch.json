@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "alumni-next",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "webapp", "run", "dev"],
+      "port": 3000
+    },
+    {
+      "name": "alumni-draft-static",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "5180", "--directory", "website"],
+      "port": 5180
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+# --- dependencies & build output ---
+node_modules/
+.next/
+.next-stale-*/
+out/
+build/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+
+# --- environment ---
+.env
+.env.*
+!.env.example
+
+# --- Obsidian: keep the vault config, drop per-machine UI state ---
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/cache
+
+# --- OS / editor noise ---
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+*.swp
+
+# --- logs ---
+npm-debug.log*
+yarn-error.log*
+*.log

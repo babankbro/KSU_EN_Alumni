@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ศิษย์เก่าวิศวกรรมศาสตร์ มหาวิทยาลัยกาฬสินธุ์ | KSU Engineering Alumni</title>
+<meta name="description" content="เว็บไซต์ร่าง (draft) ระบบศิษย์เก่า คณะวิศวกรรมศาสตร์ มหาวิทยาลัยกาฬสินธุ์ — ทำเนียบศิษย์เก่า ข่าวสาร กิจกรรม และข่าวของศิษย์เก่า">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<a class="skip-link" href="#main">ข้ามไปยังเนื้อหาหลัก</a>
+
+<div class="draft-banner">
+  ⚠️ เว็บไซต์ร่าง (Draft / Mockup) — ข้อมูลทั้งหมดเป็นตัวอย่างสมมติ ยังไม่ใช่ระบบจริง
+</div>
+
+<!-- ========== TOP UTILITY BAR ========== -->
+<div class="topbar">
+  <div class="wrap">
+    <div class="topbar-contact">
+      <a href="tel:043602053">โทร. 043-602-053</a>
+      <a href="mailto:alumni.eng@ksu.ac.th">alumni.eng@ksu.ac.th</a>
+    </div>
+    <div class="topbar-right">
+      <div class="social" aria-label="ช่องทางโซเชียล">
+        <a href="#" aria-label="Facebook">f</a>
+        <a href="#" aria-label="LINE Official Account">L</a>
+        <a href="#" aria-label="YouTube">▶</a>
+      </div>
+      <div class="lang">
+        <a href="#" class="is-active" aria-current="true">TH</a>
+        <a href="#">EN</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== HEADER ========== -->
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="#">
+      <span class="brand-mark" aria-hidden="true">KSU</span>
+      <span class="brand-text">
+        <strong>ศิษย์เก่าวิศวกรรมศาสตร์</strong>
+        <span>KSU ENGINEERING ALUMNI</span>
+      </span>
+    </a>
+
+    <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="mainNav">
+      ☰ เมนู
+    </button>
+
+    <nav class="main-nav" id="mainNav" aria-label="เมนูหลัก">
+      <ul>
+        <li><a href="#hero" class="is-active">หน้าแรก</a></li>
+        <li><a href="#directory">ทำเนียบศิษย์เก่า</a></li>
+        <li><a href="#alumni-news">ข่าวศิษย์เก่า</a></li>
+        <li><a href="#news">ข่าวประชาสัมพันธ์</a></li>
+        <li><a href="#events">กิจกรรม</a></li>
+        <li><a href="#privileges">สิทธิประโยชน์</a></li>
+        <li><a href="#contact">ติดต่อ</a></li>
+      </ul>
+    </nav>
+
+    <div class="header-cta">
+      <a href="#" class="btn btn-outline btn-sm">เข้าสู่ระบบ</a>
+      <a href="#" class="btn btn-primary btn-sm">ยืนยันตัวตนศิษย์เก่า</a>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ========== HERO ========== -->
+<section class="hero" id="hero">
+  <div class="wrap">
+    <span class="hero-eyebrow">Faculty of Engineering · Kalasin University</span>
+    <h1>
+      เครือข่ายศิษย์เก่า
+      <em>คณะวิศวกรรมศาสตร์ ม.กาฬสินธุ์</em>
+    </h1>
+    <p class="hero-lead">
+      รวมพลังศิษย์เก่าทุกรุ่นทุกสาขา เพื่อเชื่อมโยงรุ่นพี่รุ่นน้อง แบ่งปันโอกาสทางอาชีพ
+      และร่วมพัฒนาหลักสูตรของคณะอย่างต่อเนื่อง
+    </p>
+
+    <div class="hero-actions">
+      <a href="#" class="btn btn-gold">ยืนยันตัวตนศิษย์เก่า</a>
+      <a href="#directory" class="btn btn-ghost-light">ค้นหาเพื่อนร่วมรุ่น</a>
+      <a href="#alumni-news" class="btn btn-ghost-light">ส่งข่าวของคุณ</a>
+    </div>
+
+    <div class="hero-search">
+      <form onsubmit="return false;">
+        <label class="sr-only" for="q">ค้นหาชื่อศิษย์เก่า</label>
+        <input id="q" type="search" placeholder="ค้นหาชื่อ นามสกุล หรือรหัสนักศึกษา">
+        <label class="sr-only" for="year">รุ่น</label>
+        <select id="year">
+          <option>ทุกรุ่น</option>
+          <option>รุ่น 2566</option>
+          <option>รุ่น 2565</option>
+          <option>รุ่น 2564</option>
+        </select>
+        <label class="sr-only" for="prog">สาขาวิชา</label>
+        <select id="prog">
+          <option>ทุกสาขา</option>
+          <option>วิศวกรรมคอมพิวเตอร์</option>
+          <option>วิศวกรรมเครื่องกล</option>
+          <option>วิศวกรรมไฟฟ้า</option>
+          <option>วิศวกรรมโลจิสติกส์</option>
+        </select>
+        <button class="btn btn-primary" type="submit">ค้นหา</button>
+      </form>
+      <p class="hero-note">🔒 ข้อมูลติดต่อของศิษย์เก่าจะแสดงเฉพาะผู้ที่เข้าสู่ระบบแล้วเท่านั้น (ตาม PDPA)</p>
+    </div>
+  </div>
+</section>
+
+<!-- ========== STATS ========== -->
+<section class="stats" aria-label="สถิติภาพรวม">
+  <div class="wrap">
+    <div>
+      <div class="stat-num" data-count="2847">0</div>
+      <div class="stat-label">ศิษย์เก่าในระบบ</div>
+    </div>
+    <div>
+      <div class="stat-num" data-count="24">0</div>
+      <div class="stat-label">ปีที่ผลิตบัณฑิต</div>
+    </div>
+    <div>
+      <div class="stat-num" data-count="6">0</div>
+      <div class="stat-label">สาขาวิชา</div>
+    </div>
+    <div>
+      <div class="stat-num" data-count="312">0</div>
+      <div class="stat-label">องค์กรที่ทำงาน</div>
+    </div>
+    <div>
+      <div class="stat-num" data-count="48">0</div>
+      <div class="stat-label">ประกาศงานปีนี้</div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== ALUMNI RECOGNITION ========== -->
+<section class="section" id="recognition">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <h2>ศิษย์เก่าดีเด่น</h2>
+        <p class="section-sub">ศิษย์เก่าที่สร้างคุณประโยชน์ต่อวิชาชีพ สังคม และคณะ</p>
+      </div>
+      <a href="#" class="btn btn-outline btn-sm">ดูทั้งหมด</a>
+    </div>
+
+    <div class="grid grid-4">
+      <article class="card">
+        <div class="portrait" aria-hidden="true">สม</div>
+        <div class="card-body">
+          <span class="tag">รุ่น 2548 · วศ.คอมพิวเตอร์</span>
+          <h3>นายสมชาย ใจดี</h3>
+          <p>ผู้ก่อตั้งบริษัทซอฟต์แวร์ในภาคอีสาน และวิทยากรรับเชิญด้านระบบฝังตัวให้กับคณะอย่างต่อเนื่อง</p>
+          <div class="card-foot"><a href="#">อ่านต่อ →</a></div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="portrait" aria-hidden="true">สุ</div>
+        <div class="card-body">
+          <span class="tag">รุ่น 2551 · วศ.ไฟฟ้า</span>
+          <h3>นางสาวสุดารัตน์ ทองมี</h3>
+          <p>วิศวกรระบบไฟฟ้าโครงการพลังงานหมุนเวียน ผู้ริเริ่มทุนการศึกษาสำหรับรุ่นน้องในสาขา</p>
+          <div class="card-foot"><a href="#">อ่านต่อ →</a></div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="portrait" aria-hidden="true">ปร</div>
+        <div class="card-body">
+          <span class="tag">รุ่น 2553 · วศ.เครื่องกล</span>
+          <h3>นายประเสริฐ มั่นคง</h3>
+          <p>ผู้จัดการโรงงานอุตสาหกรรมเกษตร และผู้รับนักศึกษาสหกิจศึกษาของคณะต่อเนื่อง 8 ปี</p>
+          <div class="card-foot"><a href="#">อ่านต่อ →</a></div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="portrait" aria-hidden="true">กน</div>
+        <div class="card-body">
+          <span class="tag">รุ่น 2558 · วศ.โลจิสติกส์</span>
+          <h3>นางสาวกนกวรรณ ศรีสุข</h3>
+          <p>ผู้เชี่ยวชาญด้านการวางแผนขนส่ง และผู้ก่อตั้งกลุ่มพี่เลี้ยงอาชีพสำหรับศิษย์เก่ารุ่นใหม่</p>
+          <div class="card-foot"><a href="#">อ่านต่อ →</a></div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ========== DIRECTORY (faceted search) ========== -->
+<section class="section section-alt" id="directory">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <h2>ทำเนียบศิษย์เก่า</h2>
+        <p class="section-sub">ค้นหาได้หลายมิติพร้อมกัน — รุ่น สาขา จังหวัด องค์กร ตำแหน่ง และทักษะ</p>
+      </div>
+    </div>
+
+    <div class="directory">
+      <aside class="facets" aria-label="ตัวกรองการค้นหา">
+        <div class="facet">
+          <h4>รุ่น</h4>
+          <label><input type="checkbox"> 2566 <span class="count">128</span></label>
+          <label><input type="checkbox"> 2565 <span class="count">141</span></label>
+          <label><input type="checkbox"> 2564 <span class="count">136</span></label>
+          <label><input type="checkbox"> 2563 <span class="count">119</span></label>
+        </div>
+        <div class="facet">
+          <h4>สาขาวิชา</h4>
+          <label><input type="checkbox"> วิศวกรรมคอมพิวเตอร์ <span class="count">642</span></label>
+          <label><input type="checkbox"> วิศวกรรมเครื่องกล <span class="count">518</span></label>
+          <label><input type="checkbox"> วิศวกรรมไฟฟ้า <span class="count">487</span></label>
+          <label><input type="checkbox"> วิศวกรรมโลจิสติกส์ <span class="count">396</span></label>
+        </div>
+        <div class="facet">
+          <h4>จังหวัด</h4>
+          <label><input type="checkbox"> กาฬสินธุ์ <span class="count">712</span></label>
+          <label><input type="checkbox"> ขอนแก่น <span class="count">458</span></label>
+          <label><input type="checkbox"> กรุงเทพมหานคร <span class="count">391</span></label>
+          <label><input type="checkbox"> ระยอง <span class="count">204</span></label>
+        </div>
+        <div class="facet">
+          <h4>กลุ่มอาชีพ</h4>
+          <label><input type="checkbox"> วิศวกร <span class="count">1,124</span></label>
+          <label><input type="checkbox"> ไอที/ซอฟต์แวร์ <span class="count">486</span></label>
+          <label><input type="checkbox"> ราชการ/รัฐวิสาหกิจ <span class="count">352</span></label>
+          <label><input type="checkbox"> ประกอบกิจการเอง <span class="count">218</span></label>
+        </div>
+      </aside>
+
+      <div>
+        <div class="result-bar">
+          <p class="result-count">พบ <strong>2,847</strong> รายการ</p>
+          <div>
+            <label class="sr-only" for="sort">เรียงตาม</label>
+            <select id="sort" style="padding:8px 12px;border-radius:8px;border:1px solid var(--line);font:inherit;font-size:.9rem;">
+              <option>เรียงตาม: อัปเดตล่าสุด</option>
+              <option>เรียงตาม: รุ่น (ใหม่→เก่า)</option>
+              <option>เรียงตาม: ชื่อ ก–ฮ</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="person-list">
+          <article class="person">
+            <div class="portrait portrait-sm" aria-hidden="true">อน</div>
+            <div>
+              <h4>นายอนุชา พรมมา</h4>
+              <p class="meta">รุ่น 2560 · วิศวกรรมคอมพิวเตอร์</p>
+              <p class="job">Software Engineer · บริษัทเทคโนโลยีแห่งหนึ่ง · ขอนแก่น</p>
+              <p class="freshness"><span class="dot"></span> อัปเดตข้อมูลเมื่อ 12 ก.ย. 2569</p>
+            </div>
+          </article>
+
+          <article class="person">
+            <div class="portrait portrait-sm" aria-hidden="true">วร</div>
+            <div>
+              <h4>นางสาววรรณา ดีงาม</h4>
+              <p class="meta">รุ่น 2562 · วิศวกรรมไฟฟ้า</p>
+              <p class="job">วิศวกรควบคุมระบบ · การไฟฟ้าส่วนภูมิภาค · กาฬสินธุ์</p>
+              <p class="freshness"><span class="dot"></span> อัปเดตข้อมูลเมื่อ 3 ส.ค. 2569</p>
+            </div>
+          </article>
+
+          <article class="person">
+            <div class="portrait portrait-sm" aria-hidden="true">ธน</div>
+            <div>
+              <h4>นายธนพล แก้วใส</h4>
+              <p class="meta">รุ่น 2557 · วิศวกรรมเครื่องกล</p>
+              <p class="job">หัวหน้าฝ่ายซ่อมบำรุง · โรงงานแปรรูปเกษตร · ระยอง</p>
+              <p class="freshness"><span class="dot dot-stale"></span> อัปเดตข้อมูลเมื่อ 20 ม.ค. 2568</p>
+              <p class="locked">🔒 เข้าสู่ระบบเพื่อดูข้อมูลติดต่อ</p>
+            </div>
+          </article>
+
+          <article class="person">
+            <div class="portrait portrait-sm" aria-hidden="true">ศิ</div>
+            <div>
+              <h4>นางสาวศิริพร ภูผา</h4>
+              <p class="meta">รุ่น 2564 · วิศวกรรมโลจิสติกส์</p>
+              <p class="job">นักวางแผนขนส่ง · บริษัทโลจิสติกส์ · กรุงเทพมหานคร</p>
+              <p class="freshness"><span class="dot"></span> อัปเดตข้อมูลเมื่อ 28 ส.ค. 2569</p>
+            </div>
+          </article>
+        </div>
+
+        <p style="margin-top:20px;text-align:center;">
+          <a href="#" class="btn btn-outline">ดูผลลัพธ์เพิ่มเติม</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== ALUMNI NEWS FEED (ส่วนเพิ่มเติม) ========== -->
+<section class="section" id="alumni-news">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <h2>ข่าวของศิษย์เก่า</h2>
+        <p class="section-sub">ข่าวที่ศิษย์เก่าเป็นผู้ส่งเข้ามาเอง ทุกชิ้นผ่านการตรวจสอบก่อนเผยแพร่</p>
+      </div>
+      <a href="#" class="btn btn-primary btn-sm">+ ส่งข่าวของคุณ</a>
+    </div>
+
+    <div class="feed-filters" role="group" aria-label="กรองประเภทข่าว">
+      <button class="chip is-active">ทั้งหมด</button>
+      <button class="chip">ความก้าวหน้าในอาชีพ</button>
+      <button class="chip">รางวัล/ความสำเร็จ</button>
+      <button class="chip">ธุรกิจ/ผลงานใหม่</button>
+      <button class="chip">กิจกรรมรุ่น</button>
+      <button class="chip">ข่าวไว้อาลัย</button>
+    </div>
+
+    <div class="grid feed-layout" id="feedLayout">
+      <div>
+        <article class="post">
+          <div class="post-head">
+            <div class="portrait portrait-sm" aria-hidden="true">อน</div>
+            <div>
+              <h4>นายอนุชา พรมมา</h4>
+              <p class="meta">รุ่น 2560 · วิศวกรรมคอมพิวเตอร์ · 2 วันที่แล้ว</p>
+            </div>
+            <span class="tag post-type">ความก้าวหน้าในอาชีพ</span>
+          </div>
+          <div class="post-body">
+            <h3>ได้รับตำแหน่งหัวหน้าทีมพัฒนาระบบ</h3>
+            <p>
+              ขอบคุณพื้นฐานจากคณะที่ทำให้ผมมาถึงวันนี้ครับ ใครสนใจงานสายซอฟต์แวร์ที่ขอนแก่น
+              ทักมาได้เลย ทีมกำลังเปิดรับรุ่นน้องอยู่พอดี
+            </p>
+          </div>
+          <div class="post-foot">
+            <button class="react">👏 ยินดีด้วย 42</button>
+            <button class="react">💬 ความคิดเห็น 8</button>
+            <span class="post-mod">✓ ตรวจสอบแล้ว</span>
+          </div>
+        </article>
+
+        <article class="post">
+          <div class="post-head">
+            <div class="portrait portrait-sm" aria-hidden="true">สุ</div>
+            <div>
+              <h4>นางสาวสุดารัตน์ ทองมี</h4>
+              <p class="meta">รุ่น 2551 · วิศวกรรมไฟฟ้า · 5 วันที่แล้ว</p>
+            </div>
+            <span class="tag tag-gold post-type">รางวัล/ความสำเร็จ</span>
+          </div>
+          <div class="post-body">
+            <h3>ได้รับรางวัลวิศวกรดีเด่นระดับภูมิภาค ประจำปี 2569</h3>
+            <p>
+              ขอมอบรางวัลนี้ให้คณาจารย์ทุกท่านที่สอนมาครับ/ค่ะ และขอเชิญรุ่นน้องที่สนใจงาน
+              ด้านพลังงานหมุนเวียนเข้าร่วมกิจกรรมแนะแนวอาชีพเดือนหน้า
+            </p>
+          </div>
+          <div class="post-foot">
+            <button class="react">👏 ยินดีด้วย 118</button>
+            <button class="react">💬 ความคิดเห็น 23</button>
+            <span class="post-mod">✓ ตรวจสอบแล้ว</span>
+          </div>
+        </article>
+
+        <article class="post">
+          <div class="post-head">
+            <div class="portrait portrait-sm" aria-hidden="true">รุ</div>
+            <div>
+              <h4>ตัวแทนรุ่น 2555</h4>
+              <p class="meta">กิจกรรมรุ่น · 1 สัปดาห์ที่แล้ว</p>
+            </div>
+            <span class="tag tag-outline post-type">กิจกรรมรุ่น</span>
+          </div>
+          <div class="post-body">
+            <h3>นัดรวมรุ่น 2555 ครบรอบ 14 ปี</h3>
+            <p>
+              เปิดรับลงชื่อเข้าร่วมแล้ว พร้อมเปิดจองเสื้อรุ่นรอบแรก รายละเอียดเวลาและสถานที่
+              อยู่ในหน้ากิจกรรม ใครติดต่อเพื่อนในรุ่นไม่ได้ ลองค้นในทำเนียบศิษย์เก่าได้เลย
+            </p>
+          </div>
+          <div class="post-foot">
+            <button class="react">👏 ยินดีด้วย 67</button>
+            <button class="react">💬 ความคิดเห็น 31</button>
+            <span class="post-mod">✓ ตรวจสอบแล้ว</span>
+          </div>
+        </article>
+
+        <p style="text-align:center;margin-top:8px;">
+          <a href="#" class="btn btn-outline">ดูข่าวศิษย์เก่าทั้งหมด</a>
+        </p>
+      </div>
+
+      <aside>
+        <div class="post-cta">
+          <h3>มีข่าวดีอยากเล่า?</h3>
+          <p>ศิษย์เก่าทุกคนส่งข่าวของตัวเองขึ้นเว็บได้ ไม่ต้องผ่านเจ้าหน้าที่</p>
+          <ul>
+            <li>เลื่อนตำแหน่ง เปลี่ยนงาน เรียนต่อ</li>
+            <li>รางวัลและความสำเร็จ</li>
+            <li>เปิดธุรกิจหรือผลงานใหม่</li>
+            <li>นัดรวมรุ่นและกิจกรรมของรุ่น</li>
+          </ul>
+          <a href="#" class="btn btn-gold btn-sm">เข้าสู่ระบบเพื่อส่งข่าว</a>
+          <p style="margin:14px 0 0;font-size:.78rem;color:rgba(255,255,255,.65);">
+            ทุกข่าวผ่านการตรวจสอบก่อนเผยแพร่ โดยทั่วไปใช้เวลาไม่เกิน 1 วันทำการ
+          </p>
+        </div>
+
+        <div class="card" style="margin-top:18px;">
+          <div class="card-body">
+            <h3 style="font-size:.95rem;">ข่าวศิษย์เก่ายอดนิยมเดือนนี้</h3>
+            <ul style="font-size:.9rem;">
+              <li style="padding:8px 0;border-bottom:1px solid var(--line);"><a href="#">รางวัลวิศวกรดีเด่นระดับภูมิภาค</a></li>
+              <li style="padding:8px 0;border-bottom:1px solid var(--line);"><a href="#">เปิดรับสหกิจศึกษา 12 อัตรา</a></li>
+              <li style="padding:8px 0;"><a href="#">นัดรวมรุ่น 2555 ครบรอบ 14 ปี</a></li>
+            </ul>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EVENTS ========== -->
+<section class="section section-alt" id="events">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <h2>กิจกรรมที่กำลังจะมาถึง</h2>
+        <p class="section-sub">งานคืนสู่เหย้า กิจกรรมแนะแนวอาชีพ และงานของแต่ละรุ่น</p>
+      </div>
+      <a href="#" class="btn btn-outline btn-sm">ดูปฏิทินทั้งหมด</a>
+    </div>
+
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="card-body" style="padding:0;">
+          <div class="event">
+            <div class="event-date"><div class="d">14</div><div class="m">พ.ย.</div><div class="y">2569</div></div>
+            <div>
+              <h3>คืนสู่เหย้า ชาววิศวฯ กาฬสินธุ์ 2569</h3>
+              <p class="where">📍 ลานกิจกรรมคณะวิศวกรรมศาสตร์ · 17:00–22:00 น.</p>
+              <p style="margin:8px 0 0;"><a href="#">ลงทะเบียนเข้าร่วม →</a></p>
+            </div>
+          </div>
+          <div class="event">
+            <div class="event-date"><div class="d">28</div><div class="m">พ.ย.</div><div class="y">2569</div></div>
+            <div>
+              <h3>เปิดบ้านอาชีพ: เส้นทางวิศวกรรุ่นพี่</h3>
+              <p class="where">📍 ห้องประชุมคณะวิศวกรรมศาสตร์ · 09:00–12:00 น.</p>
+              <p style="margin:8px 0 0;"><a href="#">ลงทะเบียนเข้าร่วม →</a></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body" style="padding:0;">
+          <div class="event">
+            <div class="event-date"><div class="d">09</div><div class="m">ธ.ค.</div><div class="y">2569</div></div>
+            <div>
+              <h3>Job Fair ศิษย์เก่าพบรุ่นน้อง</h3>
+              <p class="where">📍 อาคารเรียนรวม มหาวิทยาลัยกาฬสินธุ์ · 09:30–16:00 น.</p>
+              <p style="margin:8px 0 0;"><a href="#">ลงทะเบียนเข้าร่วม →</a></p>
+            </div>
+          </div>
+          <div class="event">
+            <div class="event-date"><div class="d">23</div><div class="m">ม.ค.</div><div class="y">2570</div></div>
+            <div>
+              <h3>อบรมทักษะ AI สำหรับวิศวกร (ศิษย์เก่าเรียนฟรี)</h3>
+              <p class="where">📍 ออนไลน์ผ่านระบบประชุมทางไกล · 13:00–16:00 น.</p>
+              <p style="margin:8px 0 0;"><a href="#">ลงทะเบียนเข้าร่วม →</a></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== NEWS ========== -->
+<section class="section" id="news">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <h2>ข่าวประชาสัมพันธ์</h2>
+        <p class="section-sub">ข่าวสารจากคณะและสมาคมศิษย์เก่า</p>
+      </div>
+      <a href="#" class="btn btn-outline btn-sm">ดูทั้งหมด</a>
+    </div>
+
+    <div class="grid grid-3">
+      <article class="card">
+        <div class="portrait" style="aspect-ratio:16/9;font-size:1rem;" aria-hidden="true">ข่าวคณะ</div>
+        <div class="card-body">
+          <span class="tag tag-outline">18 ก.ย. 2569</span>
+          <h3>เปิดรับสมัครทุนการศึกษาจากศิษย์เก่า ประจำปี 2570</h3>
+          <p>สำหรับนักศึกษาชั้นปีที่ 2–4 ที่มีผลการเรียนดีและขาดแคลนทุนทรัพย์ จำนวน 20 ทุน</p>
+          <div class="card-foot"><a href="#">อ่านต่อ →</a></div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="portrait" style="aspect-ratio:16/9;font-size:1rem;" aria-hidden="true">ข่าวคณะ</div>
+        <div class="card-body">
+          <span class="tag tag-outline">2 ก.ย. 2569</span>
+          <h3>ขอเชิญเสนอชื่อศิษย์เก่าดีเด่น ประจำปี 2570</h3>
+          <p>เปิดรับการเสนอชื่อจากศิษย์เก่าทุกรุ่น ถึงวันที่ 31 ตุลาคม 2569</p>
+          <div class="card-foot"><a href="#">อ่านต่อ →</a></div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="portrait" style="aspect-ratio:16/9;font-size:1rem;" aria-hidden="true">ข่าวคณะ</div>
+        <div class="card-body">
+          <span class="tag tag-outline">25 ส.ค. 2569</span>
+          <h3>ขอความร่วมมือศิษย์เก่าตอบแบบสำรวจภาวะการมีงานทำ</h3>
+          <p>ข้อมูลของท่านจะถูกใช้เพื่อการปรับปรุงหลักสูตรและรายงานประกันคุณภาพ ใช้เวลาประมาณ 5 นาที</p>
+          <div class="card-foot"><a href="#">ตอบแบบสำรวจ →</a></div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ========== DEAN MESSAGE ========== -->
+<section class="section section-dark">
+  <div class="wrap">
+    <div class="section-head">
+      <div><h2>สารจากคณบดี</h2></div>
+    </div>
+    <div class="dean">
+      <div class="dean-portrait" aria-hidden="true">คณบดี</div>
+      <div>
+        <blockquote>
+          ศิษย์เก่าคือภาพสะท้อนที่ตรงที่สุดว่าคณะของเราผลิตบัณฑิตได้ตรงกับความต้องการของสังคมเพียงใด
+          ระบบศิษย์เก่านี้จึงไม่ได้ทำขึ้นเพื่อเก็บรายชื่อ แต่ทำขึ้นเพื่อให้เสียงของศิษย์เก่ากลับมาถึงห้องเรียน
+          และเพื่อให้รุ่นพี่ส่งต่อโอกาสให้รุ่นน้องได้จริง
+        </blockquote>
+        <cite>
+          <strong>คณบดีคณะวิศวกรรมศาสตร์</strong>
+          <span>มหาวิทยาลัยกาฬสินธุ์</span>
+        </cite>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== PRIVILEGES ========== -->
+<section class="section" id="privileges">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <h2>สิทธิประโยชน์สำหรับศิษย์เก่า</h2>
+        <p class="section-sub">ยืนยันตัวตนเพื่อรับบัตรศิษย์เก่าดิจิทัลและสิทธิประโยชน์</p>
+      </div>
+    </div>
+
+    <div class="grid priv-layout" id="privLayout">
+      <div class="grid grid-2">
+        <div class="card privilege">
+          <div class="ico" aria-hidden="true">📚</div>
+          <h3>ใช้บริการห้องสมุด</h3>
+          <p>เข้าใช้ห้องสมุดและฐานข้อมูลอิเล็กทรอนิกส์ของมหาวิทยาลัย</p>
+        </div>
+        <div class="card privilege">
+          <div class="ico" aria-hidden="true">🎓</div>
+          <h3>อบรมและสัมมนา</h3>
+          <p>เข้าร่วมกิจกรรมพัฒนาทักษะที่คณะจัดในอัตราศิษย์เก่า</p>
+        </div>
+        <div class="card privilege">
+          <div class="ico" aria-hidden="true">💼</div>
+          <h3>ประกาศรับสมัครงาน</h3>
+          <p>ประกาศรับสมัครงานหรือฝึกงานถึงรุ่นน้องได้โดยตรง</p>
+        </div>
+        <div class="card privilege">
+          <div class="ico" aria-hidden="true">📣</div>
+          <h3>ส่งข่าวของตัวเอง</h3>
+          <p>เผยแพร่ข่าวความก้าวหน้าและกิจกรรมของรุ่นบนหน้าเว็บ</p>
+        </div>
+      </div>
+
+      <div>
+        <div class="idcard">
+          <div class="row">
+            <div>
+              <div class="label">KSU Engineering Alumni</div>
+              <p class="name">นายอนุชา พรมมา</p>
+              <p class="sub">รุ่น 2560 · วิศวกรรมคอมพิวเตอร์</p>
+            </div>
+            <div class="qr" aria-hidden="true">QR</div>
+          </div>
+          <div class="foot">
+            <span>รหัสสมาชิก ENG-2560-0142</span>
+            <span>ยืนยันตัวตนแล้ว ✓</span>
+          </div>
+        </div>
+        <p style="margin-top:14px;font-size:.88rem;color:var(--muted);">
+          บัตรศิษย์เก่าดิจิทัลแสดงผลบนมือถือ ใช้แสดงตนในกิจกรรมของคณะได้ทันที
+        </p>
+        <a href="#" class="btn btn-primary">ยืนยันตัวตนเพื่อรับบัตร</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== CONTACT ========== -->
+<section class="section section-alt" id="contact">
+  <div class="wrap">
+    <div class="section-head">
+      <div><h2>ติดต่อเรา</h2></div>
+    </div>
+
+    <div class="contact-grid">
+      <div>
+        <div class="contact-item">
+          <div class="ico" aria-hidden="true">📍</div>
+          <div>
+            <strong>งานศิษย์เก่าสัมพันธ์ คณะวิศวกรรมศาสตร์</strong>
+            <span>มหาวิทยาลัยกาฬสินธุ์ อำเภอเมือง จังหวัดกาฬสินธุ์ 46000</span>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="ico" aria-hidden="true">☎</div>
+          <div><strong>โทรศัพท์</strong><span>043-602-053</span></div>
+        </div>
+        <div class="contact-item">
+          <div class="ico" aria-hidden="true">✉</div>
+          <div><strong>อีเมล</strong><span>alumni.eng@ksu.ac.th</span></div>
+        </div>
+        <div class="contact-item">
+          <div class="ico" aria-hidden="true">💬</div>
+          <div><strong>LINE Official Account</strong><span>@ksu-eng-alumni</span></div>
+        </div>
+      </div>
+      <div class="map-placeholder">แผนที่ตั้งคณะวิศวกรรมศาสตร์<br>(ใส่แผนที่ฝังในเวอร์ชันจริง)</div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ========== FOOTER ========== -->
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">
+          <span class="brand-mark" aria-hidden="true">KSU</span>
+          <div>
+            <strong>ศิษย์เก่าวิศวกรรมศาสตร์</strong><br>
+            <span style="font-size:.82rem;">มหาวิทยาลัยกาฬสินธุ์</span>
+          </div>
+        </div>
+        <p style="font-size:.88rem;">
+          เครือข่ายศิษย์เก่าคณะวิศวกรรมศาสตร์ เพื่อเชื่อมโยงรุ่นพี่รุ่นน้อง
+          ส่งต่อโอกาสทางอาชีพ และร่วมพัฒนาหลักสูตรของคณะ
+        </p>
+      </div>
+
+      <div>
+        <h4>ผังเว็บไซต์</h4>
+        <ul>
+          <li><a href="#hero">หน้าแรก</a></li>
+          <li><a href="#directory">ทำเนียบศิษย์เก่า</a></li>
+          <li><a href="#alumni-news">ข่าวศิษย์เก่า</a></li>
+          <li><a href="#news">ข่าวประชาสัมพันธ์</a></li>
+          <li><a href="#events">กิจกรรม</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4>บริการ</h4>
+        <ul>
+          <li><a href="#">ยืนยันตัวตนศิษย์เก่า</a></li>
+          <li><a href="#">ส่งข่าวของศิษย์เก่า</a></li>
+          <li><a href="#">ประกาศรับสมัครงาน</a></li>
+          <li><a href="#">แบบสำรวจภาวะการมีงานทำ</a></li>
+          <li><a href="#">เสนอชื่อศิษย์เก่าดีเด่น</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4>ติดต่อ</h4>
+        <ul>
+          <li>คณะวิศวกรรมศาสตร์ มหาวิทยาลัยกาฬสินธุ์</li>
+          <li>อ.เมือง จ.กาฬสินธุ์ 46000</li>
+          <li><a href="tel:043602053">043-602-053</a></li>
+          <li><a href="mailto:alumni.eng@ksu.ac.th">alumni.eng@ksu.ac.th</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <span>© 2569 คณะวิศวกรรมศาสตร์ มหาวิทยาลัยกาฬสินธุ์ — เว็บไซต์ร่างเพื่อการออกแบบระบบ</span>
+      <span><a href="#">นโยบายความเป็นส่วนตัว (PDPA)</a> · <a href="#">ผังเว็บไซต์</a></span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/js/main.js"></script>
+</body>
+</html>

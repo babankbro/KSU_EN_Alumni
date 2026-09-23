@@ -1,0 +1,3 @@
+# เว็บไซต์ร่าง — ยังไม่ต้องการให้ search engine เก็บดัชนี
+User-agent: *
+Disallow: /

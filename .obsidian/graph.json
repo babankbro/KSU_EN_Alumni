@@ -1,0 +1,26 @@
+{
+  "collapse-filter": false,
+  "search": "",
+  "showTags": true,
+  "showAttachments": false,
+  "hideUnresolved": false,
+  "showOrphans": true,
+  "collapse-color-groups": false,
+  "colorGroups": [
+    { "query": "path:02-Research", "color": { "a": 1, "rgb": 5431378 } },
+    { "query": "path:03-Design", "color": { "a": 1, "rgb": 14701138 } },
+    { "query": "path:01-Project", "color": { "a": 1, "rgb": 11621088 } },
+    { "query": "path:05-Paper", "color": { "a": 1, "rgb": 5450847 } }
+  ],
+  "collapse-display": false,
+  "showArrow": true,
+  "textFadeMultiplier": 0,
+  "nodeSizeMultiplier": 1.2,
+  "lineSizeMultiplier": 1,
+  "collapse-forces": false,
+  "centerStrength": 0.5,
+  "repelStrength": 11,
+  "linkStrength": 1,
+  "linkDistance": 260,
+  "scale": 1
+}
