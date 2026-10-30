@@ -8,38 +8,39 @@ import EventList from "@/components/EventList";
 import NewsGrid from "@/components/NewsGrid";
 import JobCard from "@/components/JobCard";
 import { relativeThai } from "@/lib/format";
+import { getSettings, getSiteImages, listPublishedNews } from "@/lib/server/content";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const [settings, images, dbNews] = await Promise.all([
+    getSettings(),
+    getSiteImages(),
+    listPublishedNews(3),
+  ]);
+
   const notable = ALUMNI.filter((a) => a.isNotable).slice(0, 4);
   const directoryPreview = ALUMNI.filter((a) => a.imageSrc).slice(0, 4);
   const feedPreview = ALUMNI_POSTS.slice(0, 3);
   const upcoming = EVENTS.slice(0, 4);
-  const latestNews = NEWS.slice(0, 3);
+  // News is edited from /admin/news; the bundled samples are only a fallback
+  // for when the database is unreachable.
+  const latestNews = dbNews ?? NEWS.slice(0, 3);
+  const hero = images.hero;
+  const dean = images.dean;
 
   return (
     <>
       {/* ---------- Hero ---------- */}
       <section className="hero">
-        <Image
-          className="hero-image"
-          src="/images/hero-alumni.png"
-          alt="ศิษย์เก่าและนักศึกษาวิศวกรรมศาสตร์แลกเปลี่ยนประสบการณ์ในมหาวิทยาลัย"
-          fill
-          priority
-          sizes="100vw"
-        />
+        {hero?.src ? (
+          <Image className="hero-image" src={hero.src} alt={hero.alt} fill priority sizes="100vw" />
+        ) : null}
         <div className="wrap">
-          <span className="hero-eyebrow">
-            Faculty of Engineering · Kalasin University
-          </span>
+          <span className="hero-eyebrow">{settings["hero.eyebrow"]}</span>
           <h1>
-            เครือข่ายศิษย์เก่า
-            <em>คณะวิศวกรรมศาสตร์ ม.กาฬสินธุ์</em>
+            {settings["hero.title"]}
+            <em>{settings["hero.titleEm"]}</em>
           </h1>
-          <p className="hero-lead">
-            รวมพลังศิษย์เก่าทุกรุ่นทุกสาขา เพื่อเชื่อมโยงรุ่นพี่รุ่นน้อง
-            แบ่งปันโอกาสทางอาชีพ และร่วมพัฒนาหลักสูตรของคณะอย่างต่อเนื่อง
-          </p>
+          <p className="hero-lead">{settings["hero.lead"]}</p>
 
           <div className="hero-actions">
             <Link href="/register" className="btn btn-gold">
@@ -280,19 +281,20 @@ export default function HomePage() {
         <div className="wrap">
           <SectionHead title="สารจากคณบดี" />
           <div className="dean">
-            <div className="dean-portrait" aria-hidden="true">
-              คณบดี
-            </div>
+            {dean?.src ? (
+              <div className="dean-portrait dean-portrait-photo">
+                <Image src={dean.src} alt={dean.alt} fill sizes="240px" style={{ objectFit: "cover" }} />
+              </div>
+            ) : (
+              <div className="dean-portrait" aria-hidden="true">
+                คณบดี
+              </div>
+            )}
             <div>
-              <blockquote>
-                ศิษย์เก่าคือภาพสะท้อนที่ตรงที่สุดว่าคณะของเราผลิตบัณฑิตได้ตรงกับความต้องการของสังคมเพียงใด
-                ระบบศิษย์เก่านี้จึงไม่ได้ทำขึ้นเพื่อเก็บรายชื่อ
-                แต่ทำขึ้นเพื่อให้เสียงของศิษย์เก่ากลับมาถึงห้องเรียน
-                และเพื่อให้รุ่นพี่ส่งต่อโอกาสให้รุ่นน้องได้จริง
-              </blockquote>
+              <blockquote>{settings["dean.quote"]}</blockquote>
               <cite>
-                <strong>คณบดีคณะวิศวกรรมศาสตร์</strong>
-                <span>มหาวิทยาลัยกาฬสินธุ์</span>
+                <strong>{settings["dean.name"]}</strong>
+                <span>{settings["dean.org"]}</span>
               </cite>
             </div>
           </div>

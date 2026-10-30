@@ -1,10 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import DraftBanner from "@/components/DraftBanner";
-import TopBar from "@/components/TopBar";
-import SiteHeader from "@/components/SiteHeader";
-import SiteFooter from "@/components/SiteFooter";
 
 // §3 Typography — Noto Sans Thai for Thai text, Inter for Latin and numerals.
 //
@@ -56,11 +52,8 @@ export default function RootLayout({
         <a className="skip-link" href="#main">
           ข้ามไปยังเนื้อหาหลัก
         </a>
-        <DraftBanner />
-        <TopBar />
-        <SiteHeader />
-        <main id="main">{children}</main>
-        <SiteFooter />
+        {/* Public chrome lives in (site)/layout.tsx; the back office has its own. */}
+        {children}
       </body>
     </html>
   );

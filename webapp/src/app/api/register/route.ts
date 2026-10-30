@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getPool } from "@/lib/server/db";
+import { clientIpFrom } from "@/lib/server/client-ip";
 import {
   emptyForm,
   validateStep1,
@@ -15,11 +16,8 @@ export const dynamic = "force-dynamic";
 type RegistrationPayload = Omit<RegistrationForm, "photo"> & { photoFileId?: string | null };
 
 function clientMeta(req: Request) {
-  const fwd = req.headers.get("x-forwarded-for");
-  return {
-    ip: fwd ? fwd.split(",")[0].trim() : null,
-    userAgent: req.headers.get("user-agent"),
-  };
+  // Null unless TRUST_PROXY=true — see src/lib/server/client-ip.ts.
+  return { ip: clientIpFrom(req.headers), userAgent: req.headers.get("user-agent") };
 }
 
 /**

@@ -42,6 +42,21 @@ build เป็น Docker image ได้แล้ว (`output: "standalone"`, i
 > **ต้องยืนยันกับทีมไอทีก่อนใช้เป็น stack จริง** — ถ้าทีมดูแล Node ไม่ได้ ควรย้ายไป Laravel
 > โดยใช้ prototype นี้เป็นสเปก UI แทน → [[Open Questions]]
 
+## สถานะปัจจุบัน: ระบบเต็ม (2026-10-30)
+
+```
+ Browser ──► web (Next.js, :3100) ──► PostgreSQL 16 (:5433)
+                    │
+                    └──────────────► MinIO (:9010, console :9011) — bucket ส่วนตัว
+```
+
+- **Docker Compose 3 service:** `db`, `minio`, `web` — ไฟล์ SQL ใน `webapp/db/` รันอัตโนมัติตอน volume ว่าง
+- ไฟล์ทุกชิ้นส่งถึงเบราว์เซอร์ผ่าน `/api/files/:id` ซึ่งตรวจสิทธิ์ก่อน (ไม่ใช้ presigned URL)
+- ฟอนต์ self-host จาก `@fontsource` — build ไม่ต้องต่ออินเทอร์เน็ตไป Google Fonts
+- MinIO ตรึงด้วย digest เพราะ tag สาธารณะ pull ไม่ได้ในเครื่องนี้
+- พอร์ตเว็บย้ายเป็น 3100 และ DB เป็น 5433 เพราะในเครื่องพัฒนามีโปรแกรมอื่นใช้ 3000/5432/9000/9001 อยู่
+- รายละเอียด: [[Database Design]] · [[Admin Back Office]]
+
 ## Component ที่ต้องมี
 - **Web app** (public + member area)
 - **Admin panel**

@@ -15,6 +15,9 @@ tags: [moc, research]
 - [[Benchmark - University Level]] — ระดับมหาวิทยาลัย
 - [[Benchmark - Employment Survey]] — ระบบภาวะการมีงานทำของบัณฑิต
 
+## หลักสูตรของคณะ
+- [[Program Taxonomy Research]] — สาขาที่เคยเปิดทุกระดับ (ปวส. → ปริญญาตรี) และการเปลี่ยนชื่อสาขา
+
 ## สังเคราะห์
 - [[Feature Matrix]] — ตารางเทียบฟีเจอร์ + จัดลำดับตามความถี่
 - [[Design Insights]] — ข้อสังเกตเชิงออกแบบที่ได้จาก benchmark

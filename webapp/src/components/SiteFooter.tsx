@@ -1,6 +1,7 @@
 import Link from "next/link";
+import type { Settings } from "@/lib/server/content";
 
-export default function SiteFooter() {
+export default function SiteFooter({ settings }: { settings: Settings }) {
   return (
     <footer className="site-footer">
       <div className="wrap">
@@ -14,10 +15,7 @@ export default function SiteFooter() {
                 <span style={{ fontSize: ".82rem" }}>มหาวิทยาลัยกาฬสินธุ์</span>
               </div>
             </div>
-            <p style={{ fontSize: ".88rem" }}>
-              เครือข่ายศิษย์เก่าคณะวิศวกรรมศาสตร์ เพื่อเชื่อมโยงรุ่นพี่รุ่นน้อง
-              ส่งต่อโอกาสทางอาชีพ และร่วมพัฒนาหลักสูตรของคณะ
-            </p>
+            <p style={{ fontSize: ".88rem" }}>{settings["footer.about"]}</p>
           </div>
 
           <div>
@@ -45,20 +43,24 @@ export default function SiteFooter() {
           <div>
             <h4>ติดต่อ</h4>
             <ul>
-              <li>คณะวิศวกรรมศาสตร์ มหาวิทยาลัยกาฬสินธุ์</li>
-              <li>อ.เมือง จ.กาฬสินธุ์ 46000</li>
-              <li><a href="tel:043602053">043-602-053</a></li>
-              <li><a href="mailto:alumni.eng@ksu.ac.th">alumni.eng@ksu.ac.th</a></li>
+              <li>{settings["contact.unit"]}</li>
+              <li>{settings["contact.address"]}</li>
+              {settings["contact.phone"] ? (
+                <li><a href={`tel:${settings["contact.phone"].replace(/[^\d+]/g, "")}`}>{settings["contact.phone"]}</a></li>
+              ) : null}
+              {settings["contact.email"] ? (
+                <li><a href={`mailto:${settings["contact.email"]}`}>{settings["contact.email"]}</a></li>
+              ) : null}
             </ul>
           </div>
         </div>
 
         <div className="footer-bottom">
           <span>
-            © 2569 คณะวิศวกรรมศาสตร์ มหาวิทยาลัยกาฬสินธุ์ — เว็บไซต์ร่างเพื่อการออกแบบระบบ
+            © 2569 คณะวิศวกรรมศาสตร์และเทคโนโลยีอุตสาหกรรม มหาวิทยาลัยกาฬสินธุ์ — เว็บไซต์ร่างเพื่อการออกแบบระบบ
           </span>
           <span>
-            <a href="#">นโยบายความเป็นส่วนตัว (PDPA)</a> · <a href="#">ผังเว็บไซต์</a>
+            <a href="#">นโยบายความเป็นส่วนตัว (PDPA)</a> · <Link href="/admin">สำหรับเจ้าหน้าที่</Link>
           </span>
         </div>
       </div>

@@ -2205,3 +2205,71 @@ button {
     display: none;
   }
 }
+
+/* Dean portrait when a real photo is uploaded from /admin/content */
+.dean-portrait-photo {
+  position: relative;
+  overflow: hidden;
+}
+
+/* News cover — fixed ratio prevents layout shift (Visual Design §6) */
+.news-cover {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  background: var(--color-primary-100);
+}
+.news-cover img {
+  object-fit: cover;
+}
+
+/* News article page */
+.news-article {
+  max-width: 860px;
+}
+.news-article p {
+  font-size: var(--fs-body-lg);
+}
+.news-meta {
+  color: var(--color-muted);
+  font-size: var(--fs-small) !important;
+}
+.news-article-cover {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin: 16px 0 28px;
+  background: var(--color-primary-100);
+}
+.news-article-cover img {
+  object-fit: cover;
+}
+
+/* ------------------------------------------------------------
+   Directory card fixes
+   ------------------------------------------------------------ */
+/* Avatars sit in a flex row that stretches children to the card's height,
+   and a stretched item ignores aspect-ratio — so pin both dimensions and
+   opt out of the stretch. Applies to initials and to photos alike. */
+.portrait-sm {
+  width: 52px;
+  height: 52px;
+  aspect-ratio: 1;
+  align-self: flex-start;
+  flex: none;
+  border-radius: 50%;
+}
+img.portrait-sm {
+  object-fit: cover;
+}
+
+/* Facet group headings are small labels, not section headings
+   (the markup moved from h4 to h3 for heading order). */
+.facet h3 {
+  font-size: var(--fs-small);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-muted);
+  margin: 0 0 10px;
+}

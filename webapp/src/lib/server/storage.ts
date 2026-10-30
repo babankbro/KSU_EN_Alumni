@@ -86,18 +86,15 @@ export async function putObject(
 }
 
 /**
- * Presigned GET for the browser. The client is configured with the internal
- * hostname (docker network), so the URL is rewritten to the public one.
+ * Opens an object for streaming. Files reach browsers through
+ * /api/files/[id], which checks who may see them first.
+ *
+ * (Presigned URLs were tried and removed: the client signs with the internal
+ * docker hostname, and rewriting the host afterwards invalidates the SigV4
+ * signature, because the Host header is part of what is signed.)
  */
-export async function presignedGetUrl(key: string, expirySeconds = 900): Promise<string> {
-  const url = await getStorage().presignedGetObject(getBucket(), key, expirySeconds);
-  const publicHost = process.env.MINIO_PUBLIC_ENDPOINT;
-  if (!publicHost) return url;
-
-  const u = new URL(url);
-  u.hostname = publicHost;
-  u.port = process.env.MINIO_PUBLIC_PORT ?? u.port;
-  return u.toString();
+export async function getObjectStream(key: string) {
+  return getStorage().getObject(getBucket(), key);
 }
 
 export async function storageReachable(): Promise<boolean> {
