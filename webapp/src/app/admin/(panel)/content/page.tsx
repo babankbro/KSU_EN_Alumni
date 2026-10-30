@@ -7,7 +7,7 @@ import ImageSlotForm from "@/components/admin/ImageSlotForm";
 export const metadata = { title: "ข้อมูลและรูปภาพเว็บ" };
 
 export default async function ContentPage({ searchParams }: { searchParams: Promise<{ reset?: string }> }) {
-  await requireAdmin();
+  await requireAdmin(["admin", "editor"]);
   const { reset } = await searchParams;
 
   const [settings, images] = await Promise.all([

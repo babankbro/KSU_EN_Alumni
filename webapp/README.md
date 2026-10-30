@@ -51,11 +51,22 @@ docker compose up --build
 
 ### อัปเดตฐานข้อมูลที่มีอยู่แล้ว
 
-ไฟล์ใน `db/` รันอัตโนมัติ**เฉพาะตอน volume ว่าง** ถ้ามีไฟล์ migration ใหม่ ให้รันเอง:
+ไฟล์ใน `db/` รันอัตโนมัติ**เฉพาะตอน volume ว่าง** ถ้ามีไฟล์ migration ใหม่ ให้รันเองตามลำดับ (ทุกไฟล์ตั้งแต่ `004` รันซ้ำได้):
 
 ```bash
-docker exec -i ksu-alumni-db psql -U alumni -d alumni < db/004_admin.sql
+docker exec -i ksu-alumni-db psql -v ON_ERROR_STOP=1 -U alumni -d alumni < db/005_remaining_srs.sql
 ```
+
+```bash
+docker exec -i ksu-alumni-db psql -v ON_ERROR_STOP=1 -U alumni -d alumni < db/006_posts_events_jobs.sql
+```
+
+| บริการเสริมใน compose | หน้าที่ |
+|---|---|
+| `cron` | เรียก `/api/internal/cron` ทุก 60 วินาที — ส่งอีเมล/LINE เตือนก่อนวันงาน จับคู่ประกาศงาน สรุปรายสัปดาห์ |
+| `mailpit` | กล่องอีเมลสำหรับเครื่องพัฒนา ดูได้ที่ http://localhost:8025 — ใช้จริงให้ตั้ง `SMTP_*` |
+
+LINE Login และการส่งทาง LINE ทำงานเมื่อตั้ง `LINE_*` ใน `.env` เท่านั้น (ยังไม่ได้ทดสอบกับ channel จริง)
 
 ## รันแบบพัฒนา (ไม่ build image)
 
@@ -76,15 +87,20 @@ db/
   002_seed_programs.sql  หลักสูตรทุกระดับ พร้อมประวัติการเปลี่ยนชื่อ
   003_seed_sample.sql    ศิษย์เก่าตัวอย่าง (สมมติ)
   004_admin.sql          บัญชีเจ้าหน้าที่ ข้อความ/รูปบนเว็บ
+  005_remaining_srs.sql  บัญชีสมาชิก ข่าวศิษย์เก่า กิจกรรม งาน บทความ รางวัล แบบสำรวจ แจ้งเตือน PDPA
+  006_posts_events_jobs.sql  ส่วนเพิ่มเติมระหว่างพัฒนา
 src/
   app/
-    (site)/              หน้าเว็บสาธารณะ (อ่านข้อความ/รูป/ข่าวจากฐานข้อมูล)
-    admin/               หลังบ้าน — login, ภาพรวม, สมาชิก, ข่าว, ข้อมูลเว็บ
-    api/                 programs, upload, register, files/[id]
-  components/            คอมโพเนนต์ UI (admin/ สำหรับหลังบ้าน)
+    (site)/              หน้าเว็บสาธารณะ + /me (พื้นที่สมาชิก) + /survey/employer (ลิงก์นายจ้าง)
+    admin/               หลังบ้าน — สมาชิก ตรวจสอบเนื้อหา ข่าว กิจกรรม แกลเลอรี รางวัล แบบสำรวจ
+                         ส่งประกาศ PDPA นำเข้า ระเบียนซ้ำ ข้อมูลอ้างอิง บัญชีเจ้าหน้าที่
+    api/                 register, files/[id], alumni-lookup, auth/line, internal/cron
+  components/            คอมโพเนนต์ UI (admin/ หลังบ้าน, forms/ ฟอร์มกลาง, me/ พื้นที่สมาชิก)
   lib/
     registration.ts      กฎตรวจฟอร์มสมัคร (ใช้ทั้งฝั่งเบราว์เซอร์และเซิร์ฟเวอร์)
-    server/              db, storage (MinIO), files, auth, content, members, client-ip
+    surveys.ts           โมเดลคำถามแบบสำรวจ (ใช้ทั้งสองฝั่ง)
+    server/              db, storage, files, auth, member-auth, posts, events, jobs, kb, awards,
+                         surveys, notify, cron, directory, profile, data-admin, rate-limit ฯลฯ
   middleware.ts          ด่านแรกของ /admin
 ```
 

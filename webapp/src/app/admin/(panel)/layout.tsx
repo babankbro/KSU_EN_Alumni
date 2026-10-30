@@ -9,13 +9,14 @@ const ROLE_LABEL = { admin: "ผู้ดูแลระบบ", editor: "ผู
 export default async function AdminPanelLayout({ children }: { children: React.ReactNode }) {
   const session = await requireAdmin();
 
-  const [pending] = await query<{ n: string; queue: string }>(
+  const [pending] = await query<{ n: string; queue: string; pdpa: string }>(
     `SELECT (SELECT count(*) FROM alumni WHERE claim_status = 'pending') AS n,
             (SELECT count(*) FROM alumni_post WHERE moderation_status = 'pending' AND NOT is_draft)
           + (SELECT count(*) FROM job_post WHERE moderation_status = 'pending')
           + (SELECT count(*) FROM kb_article WHERE moderation_status = 'pending')
-          + (SELECT count(DISTINCT (target_type, target_id)) FROM content_report WHERE status = 'open') AS queue`,
-  ).catch(() => [{ n: "0", queue: "0" }]);
+          + (SELECT count(DISTINCT (target_type, target_id)) FROM content_report WHERE status = 'open') AS queue,
+            (SELECT count(*) FROM pdpa_request WHERE status IN ('open', 'in_progress')) AS pdpa`,
+  ).catch(() => [{ n: "0", queue: "0", pdpa: "0" }]);
   const role = session.role;
 
   const items = [
@@ -27,15 +28,30 @@ export default async function AdminPanelLayout({ children }: { children: React.R
     ...(role === "admin" || role === "editor"
       ? [{ href: "/admin/moderation", label: "ตรวจสอบเนื้อหา", icon: "✓", count: Number(pending?.queue ?? 0) }]
       : []),
-    { href: "/admin/news", label: "ข่าวประชาสัมพันธ์", icon: "📰" },
-    ...(role === "admin" || role === "editor" ? [{ href: "/admin/events", label: "กิจกรรม", icon: "📅" }] : []),
+    ...(role === "admin" || role === "editor"
+      ? [
+          { href: "/admin/news", label: "ข่าวประชาสัมพันธ์", icon: "📰" },
+          { href: "/admin/events", label: "กิจกรรม", icon: "📅" },
+          { href: "/admin/gallery", label: "แกลเลอรี", icon: "📷" },
+        ]
+      : []),
     ...(role === "admin" || role === "faculty"
       ? [
           { href: "/admin/awards", label: "ศิษย์เก่าดีเด่น", icon: "🏅" },
           { href: "/admin/surveys", label: "แบบสำรวจ", icon: "📊" },
         ]
       : []),
-    { href: "/admin/content", label: "ข้อมูลและรูปภาพเว็บ", icon: "🖼" },
+    ...(role === "admin" || role === "editor" ? [{ href: "/admin/content", label: "ข้อมูลและรูปภาพเว็บ", icon: "🖼" }] : []),
+    ...(role === "admin"
+      ? [
+          { href: "/admin/broadcast", label: "ส่งประกาศ", icon: "📣" },
+          { href: "/admin/pdpa", label: "คำขอ PDPA", icon: "🔒", count: Number(pending?.pdpa ?? 0) },
+          { href: "/admin/import", label: "นำเข้าข้อมูล", icon: "⬆" },
+          { href: "/admin/duplicates", label: "ระเบียนซ้ำ", icon: "⧉" },
+          { href: "/admin/reference", label: "ข้อมูลอ้างอิง", icon: "⚙" },
+          { href: "/admin/staff", label: "บัญชีเจ้าหน้าที่", icon: "🔑" },
+        ]
+      : []),
   ];
 
   return (

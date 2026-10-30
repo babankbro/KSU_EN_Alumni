@@ -21,6 +21,22 @@ const ACTION_LABEL: Record<string, string> = {
   "content.image": "เปลี่ยนรูปภาพบนเว็บ",
   "content.image_reset": "คืนค่ารูปภาพเริ่มต้น",
   "admin.login": "เข้าสู่ระบบ",
+  "post.approve": "อนุมัติข่าวศิษย์เก่า",
+  "post.hide": "ซ่อนข่าวศิษย์เก่า",
+  "post.create": "ศิษย์เก่าส่งข่าว",
+  "job.approve": "อนุมัติประกาศงาน",
+  "job.create": "ศิษย์เก่าประกาศงาน",
+  "kb.create": "ศิษย์เก่าส่งบทความ",
+  "event.create": "สร้างกิจกรรม",
+  "event.update": "แก้ไขกิจกรรม",
+  "broadcast.send": "ส่งประกาศ",
+  "pdpa.handle": "ดำเนินการคำขอ PDPA",
+  "pdpa.erase": "ลบข้อมูลตามคำขอ",
+  "member.import": "นำเข้าข้อมูลศิษย์เก่า",
+  "member.merge": "รวมระเบียนซ้ำ",
+  "member.export": "ส่งออกรายชื่อสมาชิก",
+  "award.decide": "บันทึกผลศิษย์เก่าดีเด่น",
+  "survey.create": "สร้างแบบสำรวจ",
 };
 
 export default async function AdminDashboard({
@@ -132,10 +148,12 @@ export default async function AdminDashboard({
             เผยแพร่แล้ว <strong>{newsCounts[0]?.published ?? 0}</strong> ข่าว · ฉบับร่าง{" "}
             <strong>{newsCounts[0]?.drafts ?? 0}</strong> ข่าว
           </p>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <Link href="/admin/news/new" className="btn btn-primary btn-sm">+ เพิ่มข่าว</Link>
-            <Link href="/admin/content" className="btn btn-outline btn-sm">แก้ไขข้อมูลเว็บ</Link>
-          </div>
+          {session.role !== "faculty" ? (
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <Link href="/admin/news/new" className="btn btn-primary btn-sm">+ เพิ่มข่าว</Link>
+              <Link href="/admin/content" className="btn btn-outline btn-sm">แก้ไขข้อมูลเว็บ</Link>
+            </div>
+          ) : null}
         </section>
 
         <section className="admin-card">

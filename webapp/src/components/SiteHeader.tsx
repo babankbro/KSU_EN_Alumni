@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 const NAV = [
   { href: "/", label: "หน้าแรก" },
   { href: "/directory", label: "ทำเนียบศิษย์เก่า" },
+  { href: "/alumni-news", label: "ข่าวศิษย์เก่า" },
   { href: "/news", label: "ข่าวสาร" },
   { href: "/events", label: "กิจกรรม" },
   { href: "/jobs", label: "งานและฝึกงาน" },

@@ -1,26 +1,60 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ALUMNI, ALUMNI_POSTS, EVENTS, JOB_POSTS, NEWS, programName } from "@/lib/data";
+import { NEWS } from "@/lib/data";
 import SectionHead from "@/components/SectionHead";
 import StatsStrip from "@/components/StatsStrip";
-import PersonCard from "@/components/PersonCard";
-import EventList from "@/components/EventList";
+import DirectoryCard from "@/components/DirectoryCard";
+import EventRow from "@/components/EventRow";
 import NewsGrid from "@/components/NewsGrid";
-import JobCard from "@/components/JobCard";
-import { relativeThai } from "@/lib/format";
+import JobItem from "@/components/JobItem";
+import PostCard from "@/components/PostCard";
 import { getSettings, getSiteImages, listPublishedNews } from "@/lib/server/content";
+import { getViewer, viewerAccount } from "@/lib/server/member-auth";
+import { listAwardees } from "@/lib/server/awards";
+import { parseDirFilter, searchDirectory } from "@/lib/server/directory";
+import { canInteract, listFeed } from "@/lib/server/posts";
+import { listUpcomingEvents } from "@/lib/server/events";
+import { listJobs, parseJobFilter } from "@/lib/server/jobs";
+import { query } from "@/lib/server/db";
+
+/** Each home section degrades to empty instead of failing the whole page. */
+async function safe<T>(p: Promise<T>, fallback: T, what: string): Promise<T> {
+  try {
+    return await p;
+  } catch (err) {
+    console.error(`[home] ${what} unavailable`, err);
+    return fallback;
+  }
+}
 
 export default async function HomePage() {
-  const [settings, images, dbNews] = await Promise.all([
+  const viewer = await getViewer();
+  const account = viewerAccount(viewer);
+  const [settings, images, dbNews, awardees, people, feed, upcoming, jobs, heroOptions] = await Promise.all([
     getSettings(),
     getSiteImages(),
     listPublishedNews(3),
+    safe(listAwardees(), [], "awardees"),
+    safe(searchDirectory(parseDirFilter({}), viewer).then((r) => r.people), [], "directory"),
+    safe(listFeed({ type: "", cohort: "", program: "", page: 1 }, viewer, 3).then((r) => r.posts), [], "alumni news"),
+    safe(listUpcomingEvents(4), [], "events"),
+    safe(listJobs(parseJobFilter({})).then((r) => r.jobs.slice(0, 3)), [], "jobs"),
+    safe(
+      query<{ kind: string; value: string; label: string }>(
+        `SELECT DISTINCT 'cohort' AS kind, admission_year::text AS value, admission_year::text AS label FROM directory_public
+         UNION SELECT DISTINCT 'program', program_current_id::text, degree_level::text || ' ' || program_current_name_th FROM directory_public`,
+      ),
+      [],
+      "hero options",
+    ),
   ]);
 
-  const notable = ALUMNI.filter((a) => a.isNotable).slice(0, 4);
-  const directoryPreview = ALUMNI.filter((a) => a.imageSrc).slice(0, 4);
-  const feedPreview = ALUMNI_POSTS.slice(0, 3);
-  const upcoming = EVENTS.slice(0, 4);
+  const notable = awardees.slice(0, 4);
+  // Prefer people with a photo the viewer may see, as in the design.
+  const directoryPreview = [...people].sort((a, b) => Number(Boolean(b.photoUrl)) - Number(Boolean(a.photoUrl))).slice(0, 4);
+  const cohorts = heroOptions.filter((o) => o.kind === "cohort").sort((a, b) => Number(b.value) - Number(a.value));
+  const programs = heroOptions.filter((o) => o.kind === "program").sort((a, b) => a.label.localeCompare(b.label, "th"));
+  const interact = canInteract(viewer);
   // News is edited from /admin/news; the bundled samples are only a fallback
   // for when the database is unreachable.
   const latestNews = dbNews ?? NEWS.slice(0, 3);
@@ -70,20 +104,14 @@ export default async function HomePage() {
               </label>
               <select id="cohort" name="cohort" defaultValue="">
                 <option value="">ทุกรุ่น</option>
-                <option>2566</option>
-                <option>2564</option>
-                <option>2562</option>
-                <option>2560</option>
+                {cohorts.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
               </select>
               <label className="sr-only" htmlFor="program">
                 สาขาวิชา
               </label>
               <select id="program" name="program" defaultValue="">
                 <option value="">ทุกสาขา</option>
-                <option>วิศวกรรมคอมพิวเตอร์</option>
-                <option>วิศวกรรมเครื่องกล</option>
-                <option>วิศวกรรมไฟฟ้า</option>
-                <option>วิศวกรรมโลจิสติกส์</option>
+                {programs.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
               </select>
               <button className="btn btn-primary" type="submit">
                 ค้นหา
@@ -105,36 +133,23 @@ export default async function HomePage() {
             title="ศิษย์เก่าดีเด่น"
             sub="ศิษย์เก่าที่สร้างคุณประโยชน์ต่อวิชาชีพ สังคม และคณะ"
             actionLabel="ดูทั้งหมด"
-            actionHref="/news"
+            actionHref="/awards"
           />
           <div className="grid grid-4">
-            {notable.map((a) => (
-              <article className="card" key={a.id}>
-                {a.imageSrc ? (
-                  <Image
-                    className="portrait portrait-photo"
-                    src={a.imageSrc}
-                    alt={`ภาพตัวอย่าง ${a.titleTh}${a.firstNameTh} ${a.lastNameTh}`}
-                    width={768}
-                    height={1024}
-                    sizes="(max-width: 480px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                  />
+            {notable.map((a, i) => (
+              <article className="card" key={`${a.alumniId ?? a.name}-${i}`}>
+                {a.photoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img className="portrait portrait-photo" src={a.photoUrl} alt={`รูปของ ${a.name}`} loading="lazy" />
                 ) : (
-                  <div className="portrait" aria-hidden="true">
-                    {a.firstNameTh.slice(0, 2)}
-                  </div>
+                  <div className="portrait" aria-hidden="true">{a.name.replace(/^(นาย|นางสาว|นาง|ดร\.)/, "").slice(0, 2)}</div>
                 )}
                 <div className="card-body">
-                  <span className="tag">
-                    รุ่น {a.admissionYear} · {programName(a.programId)}
-                  </span>
-                  <h3>
-                    {a.titleTh}
-                    {a.firstNameTh} {a.lastNameTh}
-                  </h3>
-                  <p>{a.notableCitation}</p>
+                  {a.cohort ? <span className="tag">รุ่น {a.cohort}{a.program ? ` · ${a.program}` : ""}</span> : null}
+                  <h3>{a.name}</h3>
+                  <p>{a.citation}</p>
                   <div className="card-foot">
-                    <a href="#">อ่านต่อ →</a>
+                    {a.listed && a.alumniId ? <Link href={`/directory/${a.alumniId}`}>ดูโปรไฟล์ →</Link> : <Link href="/awards">ทำเนียบศิษย์เก่าดีเด่น →</Link>}
                   </div>
                 </div>
               </article>
@@ -154,7 +169,7 @@ export default async function HomePage() {
           />
           <div className="person-list">
             {directoryPreview.map((p) => (
-              <PersonCard key={p.id} person={p} />
+              <DirectoryCard key={p.id} p={p} signedIn={viewer.kind !== "anonymous"} />
             ))}
           </div>
         </div>
@@ -171,51 +186,24 @@ export default async function HomePage() {
           />
           <div className="grid feed-layout">
             <div>
-              {feedPreview.map((post) => {
-                const author = ALUMNI.find((a) => a.id === post.authorId);
-                return (
-                  <article className="post" key={post.id}>
-                    <div className="post-head">
-                      <div className="portrait portrait-sm" aria-hidden="true">
-                        {author?.firstNameTh.slice(0, 2) ?? "??"}
-                      </div>
-                      <div>
-                        <h4>
-                          {author
-                            ? `${author.titleTh}${author.firstNameTh} ${author.lastNameTh}`
-                            : "ศิษย์เก่า"}
-                        </h4>
-                        <p className="meta">
-                          {author
-                            ? `รุ่น ${author.admissionYear} · ${programName(author.programId)} · `
-                            : ""}
-                          {relativeThai(post.publishedAt)}
-                        </p>
-                      </div>
-                      <span className="tag post-type">{post.type}</span>
-                    </div>
-                    <div className="post-body">
-                      <h3>{post.title}</h3>
-                      <p>{post.body}</p>
-                    </div>
-                  </article>
-                );
-              })}
+              {feed.length ? feed.map((post) => <PostCard key={post.id} post={post} canReact={interact} back="/" />) : (
+                <div className="empty-state"><p style={{ marginBottom: 0 }}>ยังไม่มีข่าวของศิษย์เก่า</p></div>
+              )}
             </div>
 
             <aside>
               <div className="post-cta">
                 <h3>มีข่าวดีอยากเล่า?</h3>
-                <p>ศิษย์เก่าทุกคนส่งข่าวของตัวเองขึ้นเว็บได้ ไม่ต้องผ่านเจ้าหน้าที่</p>
+                <p>ศิษย์เก่าที่ยืนยันตัวตนแล้วส่งข่าวของตัวเองขึ้นเว็บได้</p>
                 <ul>
                   <li>เลื่อนตำแหน่ง เปลี่ยนงาน เรียนต่อ</li>
                   <li>รางวัลและความสำเร็จ</li>
                   <li>เปิดธุรกิจหรือผลงานใหม่</li>
                   <li>นัดรวมรุ่นและกิจกรรมของรุ่น</li>
                 </ul>
-                <a href="#" className="btn btn-gold btn-sm">
-                  เข้าสู่ระบบเพื่อส่งข่าว
-                </a>
+                <Link href={account ? "/me/posts/new" : "/login?next=/me/posts/new"} className="btn btn-gold btn-sm">
+                  {account ? "+ ส่งข่าว" : "เข้าสู่ระบบเพื่อส่งข่าว"}
+                </Link>
                 <p
                   style={{
                     margin: "14px 0 0",
@@ -241,7 +229,7 @@ export default async function HomePage() {
             actionHref="/events"
           />
           <div className="card">
-            <EventList events={upcoming} />
+            {upcoming.length ? upcoming.map((e) => <EventRow key={e.id} e={e} />) : <p className="muted" style={{ padding: 20 }}>ยังไม่มีกิจกรรมที่กำหนดไว้</p>}
           </div>
         </div>
       </section>
@@ -269,9 +257,7 @@ export default async function HomePage() {
             actionHref="/jobs"
           />
           <div className="grid grid-3">
-            {JOB_POSTS.map((j) => (
-              <JobCard key={j.id} job={j} />
-            ))}
+            {jobs.map((j) => <JobItem key={j.id} job={j} />)}
           </div>
         </div>
       </section>
@@ -311,7 +297,7 @@ export default async function HomePage() {
             และช่วยให้หลักสูตรปรับตามเส้นทางอาชีพจริงของศิษย์เก่า
           </p>
           <div className="engagement-actions">
-            <Link href="/register" className="btn btn-on-dark">
+            <Link href={account ? "/me" : "/register"} className="btn btn-on-dark">
               อัปเดตโปรไฟล์
             </Link>
             <Link href="/about" className="link-light">

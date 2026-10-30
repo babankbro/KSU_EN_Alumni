@@ -9,7 +9,7 @@ tags: [design, database, postgresql, minio]
 # 🗄️ Database Design
 
 ออกแบบจริงที่ใช้งานใน `webapp/db/` (PostgreSQL 16) — ต่อยอดจาก [[Data Model]] ซึ่งเป็นร่างแนวคิด
-ความต้องการอ้างอิง [[SRS]] v0.2
+ความต้องการอ้างอิง [[SRS]] v0.3
 
 | ไฟล์ | เนื้อหา |
 |---|---|
@@ -17,8 +17,10 @@ tags: [design, database, postgresql, minio]
 | `002_seed_programs.sql` | หลักสูตร 32 รายการ พร้อมแหล่งที่มา → [[Program Taxonomy Research]] |
 | `003_seed_sample.sql` | ศิษย์เก่าตัวอย่าง (บุคคลสมมติทั้งหมด) — ต้องลบก่อนใช้งานจริง |
 | `004_admin.sql` | บัญชีเจ้าหน้าที่, session, ข้อความและรูปบนเว็บ → [[Admin Back Office]] |
+| `005_remaining_srs.sql` | บัญชีศิษย์เก่า/นักศึกษา, rate limit, การมองเห็นรายฟิลด์, คำขอ PDPA, ปฏิสัมพันธ์ข่าว, กิจกรรม, งาน, บทความ, รางวัล, แบบสำรวจ, แจ้งเตือน, แกลเลอรี, นำเข้าและรวมระเบียน |
+| `006_posts_events_jobs.sql` | รูปของข่าวศิษย์เก่า (`post_image`), จังหวัดของประกาศงาน, ฉบับร่างของกิจกรรม, index ค้นหาบทความ |
 
-ไฟล์ทั้งหมดรันอัตโนมัติเมื่อ container ฐานข้อมูลเริ่มกับ volume ว่าง · `004` เขียนแบบ idempotent จึงรันซ้ำกับฐานข้อมูลเดิมได้
+ไฟล์ทั้งหมดรันอัตโนมัติเมื่อ container ฐานข้อมูลเริ่มกับ volume ว่าง · `004`–`006` เขียนแบบ idempotent จึงรันซ้ำกับฐานข้อมูลเดิมได้
 
 ---
 
@@ -129,13 +131,28 @@ View **`program_resolved`** เดินตาม `successor_id` แบบ recur
 
 ---
 
+## 5b. โมดูลที่เพิ่มใน 005–006
+
+| กลุ่ม | ตาราง | หมายเหตุ |
+|---|---|---|
+| บัญชี | `account`, `account_session`, `account_token`, `rate_event` | แยกจากบัญชีเจ้าหน้าที่ · เก็บ hash ของ token เท่านั้น · rate limit ตามบัญชี/อีเมล ไม่ใช่ IP |
+| ความเป็นส่วนตัว | `alumni_contact.field_visibility`, view `alumni_latest_consent`, `directory_public`, `pdpa_request` | ทำเนียบแสดงเฉพาะ verified + ยินยอมล่าสุด + ไม่ถูก anonymize |
+| ข่าวศิษย์เก่า | `alumni_post` (+draft, image, submitted_at), `alumni_post_tag`, `_reaction`, `_comment`, `content_report` | การมองเห็นของข่าวตัดสินใน SQL ที่เดียว (`postVisibleSql`) ใช้ทั้งฟีด โปรไฟล์ และการเสิร์ฟรูป |
+| กิจกรรม | `event` (+is_published, closes_at), `event_registration` (+cancelled_at, reminded_at), `event_item`, `event_order` | จองที่นั่ง/ของล็อกแถวด้วย `FOR UPDATE` กันจองเกิน |
+| งาน | `job_post` (+province, apply_url, contact_email), `job_post_program`, `job_post_skill` | หมดอายุด้วยเงื่อนไข `closes_at` ในคำสั่ง SQL |
+| ความรู้ / รางวัล | `kb_article`, `award_round`, `award_nomination` | ได้รับรางวัล → `alumni.is_notable` คำนวณจากรางวัลที่เหลือ |
+| แบบสำรวจ | `survey` (questions JSON), `survey_response` (program, graduation_year, years_since_grad), `employer_invite` | ตอบได้ครั้งเดียวต่อรอบ · ลิงก์นายจ้างใช้ครั้งเดียว 30 วัน · รายงานซ่อนกลุ่ม n<5 |
+| แจ้งเตือน | `notification` (outbox + inbox), `notification_pref`, `broadcast`, `data_confirm_round`, `cron_run` | cron ส่งอีเมล/LINE · `dedupe_key` กันส่งซ้ำ |
+| ข่าวทางการ | `news_tag`, `news_attachment`, `gallery_album`, `gallery_photo` | |
+| หลังบ้าน | `import_batch`, `alumni_merge`, `job_category` | |
+
 ## 6. Audit log
 
 `audit_log` เป็น **append-only** ด้วย trigger ที่ปฏิเสธ UPDATE / DELETE / TRUNCATE
 
 > เดิมใช้ `REVOKE UPDATE, DELETE ... FROM PUBLIC` แต่ทดสอบแล้วพบว่า**ไม่มีผลกับเจ้าของตาราง** ซึ่งแอปใช้เชื่อมต่ออยู่ จึงเปลี่ยนเป็น trigger
 
-เหตุการณ์ที่บันทึก: `registration.submit` · `admin.login` · `admin.login_failed` · `member.view` · `member.approve` · `member.reject` · `news.*` · `content.*`
+เหตุการณ์ที่บันทึก: `registration.submit` · `admin.login` · `admin.login_failed` · `member.view/approve/reject/export/import/merge` · `directory.profile_view` · `news.*` · `content.*` · `post.*` · `job.*` · `kb.*` · `event.*` · `award.*` · `survey.*` · `broadcast.send` · `pdpa.handle/erase` · `staff.*` · `reference.*` · `profile.*`
 
 ---
 
@@ -144,6 +161,6 @@ View **`program_resolved`** เดินตาม `successor_id` แบบ recur
 - Enum label ของ PostgreSQL ยาวได้ไม่เกิน **63 bytes** — ภาษาไทยใช้ 3 bytes/ตัวอักษร จึงไม่เกิน 21 ตัว (เคยชนกับ "ข่าวประชาสัมพันธ์ทั่วไป" ต้องย่อ)
 - แอปเชื่อมต่อเป็นเจ้าของ schema — ก่อนใช้งานจริงควรแยก role สำหรับ migration กับ role สำหรับแอป
 - ยังไม่มีระบบ migration อัตโนมัติ สำหรับฐานข้อมูลที่มีอยู่แล้วให้รันไฟล์ใหม่ด้วยมือ:
-  `docker exec -i ksu-alumni-db psql -U alumni -d alumni < db/004_admin.sql`
+  `docker exec -i ksu-alumni-db psql -U alumni -d alumni < db/006_posts_events_jobs.sql`
 
 [[SRS]] · [[Data Model]] · [[Architecture]] · [[PDPA and Privacy]]

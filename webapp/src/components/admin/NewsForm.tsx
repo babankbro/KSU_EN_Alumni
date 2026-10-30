@@ -16,6 +16,8 @@ export interface NewsFormValues {
   /** "YYYY-MM-DDTHH:mm" in Bangkok time, for scheduled items */
   publishAt: string;
   coverUrl: string | null;
+  /** FR-NEWS-02, comma separated */
+  tags: string;
 }
 
 const CATEGORIES = ["ข่าวคณะ", "ทุนการศึกษา", "ศิษย์เก่าดีเด่น", "กิจกรรม", "แบบสำรวจ", "ประกันคุณภาพ", "รับสมัครงาน"];
@@ -76,6 +78,11 @@ export default function NewsForm({ initial }: { initial: NewsFormValues }) {
             <datalist id="news-categories">
               {CATEGORIES.map((c) => <option key={c} value={c} />)}
             </datalist>
+          </div>
+          <div className={`field${fe.tags ? " has-error" : ""}`}>
+            <label htmlFor="tags">แท็ก (คั่นด้วยจุลภาค)</label>
+            <input id="tags" name="tags" type="text" maxLength={300} defaultValue={initial.tags} placeholder="เช่น คืนสู่เหย้า, ทุนการศึกษา" />
+            {fe.tags ? <p className="field-error">{fe.tags}</p> : null}
           </div>
           <div className="field" style={{ justifyContent: "flex-end" }}>
             <label className="radio-row" style={{ fontWeight: 400 }}>

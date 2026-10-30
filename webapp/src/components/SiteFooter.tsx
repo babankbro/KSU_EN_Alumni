@@ -26,6 +26,9 @@ export default function SiteFooter({ settings }: { settings: Settings }) {
               <li><Link href="/alumni-news">ข่าวศิษย์เก่า</Link></li>
               <li><Link href="/news">ข่าวประชาสัมพันธ์</Link></li>
               <li><Link href="/events">กิจกรรม</Link></li>
+              <li><Link href="/gallery">แกลเลอรีภาพกิจกรรม</Link></li>
+              <li><Link href="/kb">คลังความรู้จากรุ่นพี่</Link></li>
+              <li><Link href="/awards">ศิษย์เก่าดีเด่น</Link></li>
             </ul>
           </div>
 
@@ -33,10 +36,10 @@ export default function SiteFooter({ settings }: { settings: Settings }) {
             <h4>บริการ</h4>
             <ul>
               <li><Link href="/privileges">สิทธิประโยชน์ศิษย์เก่า</Link></li>
-              <li><Link href="/alumni-news">ส่งข่าวของศิษย์เก่า</Link></li>
-              <li><a href="#">ประกาศรับสมัครงาน</a></li>
-              <li><a href="#">แบบสำรวจภาวะการมีงานทำ</a></li>
-              <li><a href="#">เสนอชื่อศิษย์เก่าดีเด่น</a></li>
+              <li><Link href="/me/posts/new">ส่งข่าวของศิษย์เก่า</Link></li>
+              <li><Link href="/me/jobs/new">ประกาศรับสมัครงาน</Link></li>
+              <li><Link href="/me/survey">แบบสำรวจภาวะการมีงานทำ</Link></li>
+              <li><Link href="/awards/nominate">เสนอชื่อศิษย์เก่าดีเด่น</Link></li>
             </ul>
           </div>
 

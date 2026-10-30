@@ -5,7 +5,7 @@ import NewsForm from "@/components/admin/NewsForm";
 export const metadata = { title: "เพิ่มข่าว" };
 
 export default async function NewNewsPage() {
-  await requireAdmin();
+  await requireAdmin(["admin", "editor"]);
   return (
     <>
       <p className="small"><Link href="/admin/news">← ข่าวทั้งหมด</Link></p>
@@ -13,7 +13,7 @@ export default async function NewNewsPage() {
       <NewsForm
         initial={{
           title: "", summary: "", body: "", category: "ข่าวคณะ", isPinned: false,
-          publishMode: "draft", publishAt: "", coverUrl: null,
+          publishMode: "draft", publishAt: "", coverUrl: null, tags: "",
         }}
       />
     </>

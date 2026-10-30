@@ -23,7 +23,7 @@ export default async function AdminNewsPage({
 }: {
   searchParams: Promise<{ saved?: string; deleted?: string }>;
 }) {
-  await requireAdmin();
+  await requireAdmin(["admin", "editor"]);
   const { saved, deleted } = await searchParams;
 
   const rows = await query<Row>(

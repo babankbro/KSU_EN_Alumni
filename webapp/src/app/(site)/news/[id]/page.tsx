@@ -45,6 +45,23 @@ export default async function NewsDetailPage({ params }: Props) {
             ) : (
               <p>{item.summary}</p>
             )}
+            {item.attachments.length ? (
+              <section className="news-attachments" aria-labelledby="att-h">
+                <h2 id="att-h">เอกสารแนบ</h2>
+                <ul className="list-plain">
+                  {item.attachments.map((a) => (
+                    <li key={a.url}><a href={a.url} target="_blank" rel="noopener">📄 {a.label} (PDF)</a></li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
+            {item.tags.length ? (
+              <p className="news-tags">
+                {item.tags.map((t) => (
+                  <Link key={t} href={`/news?tag=${encodeURIComponent(t)}`} className="chip">#{t}</Link>
+                ))}
+              </p>
+            ) : null}
             <p style={{ marginTop: 32 }}>
               <Link href="/news" className="btn btn-outline">
                 ← ข่าวทั้งหมด

@@ -106,12 +106,16 @@ interface NewsRow {
   published_at: Date;
   cover_file_id: string | null;
   is_pinned: boolean;
+  tags?: string[] | null;
+  attachments?: { file_id: string; label: string }[] | null;
 }
 
 export interface NewsDetail extends NewsItem {
   body: string;
   coverSrc: string | null;
   isPinned: boolean;
+  tags: string[];
+  attachments: { url: string; label: string }[];
 }
 
 function toNews(r: NewsRow, defaultCover: string | null): NewsDetail {
@@ -125,7 +129,54 @@ function toNews(r: NewsRow, defaultCover: string | null): NewsDetail {
     href: `/news/${r.id}`,
     coverSrc: r.cover_file_id ? fileUrl(r.cover_file_id) : defaultCover,
     isPinned: r.is_pinned,
+    tags: r.tags ?? [],
+    attachments: (r.attachments ?? []).map((a) => ({ url: fileUrl(a.file_id), label: a.label })),
   };
+}
+
+const NEWS_EXTRAS = `
+  (SELECT array_agg(t.tag ORDER BY t.tag) FROM news_tag t WHERE t.news_id = news.id) AS tags,
+  (SELECT json_agg(json_build_object('file_id', a.file_id, 'label', a.label) ORDER BY a.label)
+     FROM news_attachment a WHERE a.news_id = news.id) AS attachments`;
+
+/** FR-NEWS-03 — published news by text (substring or trigram), category and tag. */
+export async function searchPublishedNews(f: { q: string; category: string; tag: string }, limit = 60): Promise<NewsDetail[]> {
+  const params: unknown[] = [];
+  const where = ["published_at IS NOT NULL", "published_at <= now()"];
+  if (f.q) {
+    params.push(`%${f.q}%`, f.q);
+    where.push(`((title || ' ' || coalesce(summary, '') || ' ' || coalesce(body, '')) ILIKE $${params.length - 1}
+                 OR similarity(title || ' ' || coalesce(summary, ''), $${params.length}) > 0.25)`);
+  }
+  if (f.category) {
+    params.push(f.category);
+    where.push(`category = $${params.length}`);
+  }
+  if (f.tag) {
+    params.push(f.tag);
+    where.push(`EXISTS (SELECT 1 FROM news_tag t WHERE t.news_id = news.id AND t.tag = $${params.length})`);
+  }
+  params.push(limit);
+  const [rows, images] = await Promise.all([
+    query<NewsRow>(
+      `SELECT id, title, summary, body, category, published_at, cover_file_id, is_pinned, ${NEWS_EXTRAS}
+       FROM news WHERE ${where.join(" AND ")} ORDER BY is_pinned DESC, published_at DESC LIMIT $${params.length}`,
+      params,
+    ),
+    getSiteImages(),
+  ]);
+  return rows.map((r) => toNews(r, images["news.default"]?.src ?? null));
+}
+
+export async function newsFacets(): Promise<{ categories: string[]; tags: { tag: string; n: number }[] }> {
+  const [cats, tags] = await Promise.all([
+    query<{ category: string }>(`SELECT DISTINCT category FROM news WHERE published_at <= now() AND category IS NOT NULL ORDER BY 1`),
+    query<{ tag: string; n: string }>(
+      `SELECT t.tag, count(*) AS n FROM news_tag t JOIN news n ON n.id = t.news_id WHERE n.published_at <= now()
+       GROUP BY t.tag ORDER BY count(*) DESC, t.tag LIMIT 20`,
+    ),
+  ]);
+  return { categories: cats.map((c) => c.category), tags: tags.map((t) => ({ tag: t.tag, n: Number(t.n) })) };
 }
 
 /** Published news only; drafts (published_at NULL) and future-dated items stay hidden. */
@@ -154,7 +205,7 @@ export async function getPublishedNews(id: number): Promise<NewsDetail | null> {
   try {
     const [rows, images] = await Promise.all([
       query<NewsRow>(
-        `SELECT id, title, summary, body, category, published_at, cover_file_id, is_pinned
+        `SELECT id, title, summary, body, category, published_at, cover_file_id, is_pinned, ${NEWS_EXTRAS}
          FROM news WHERE id = $1 AND published_at IS NOT NULL AND published_at <= now()`,
         [id],
       ),

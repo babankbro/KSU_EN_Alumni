@@ -51,7 +51,7 @@ export async function logoutAction(): Promise<void> {
 const NEWS_LIMITS = { title: 200, summary: 400, body: 20000, category: 60 };
 
 export async function saveNewsAction(_prev: FormState, fd: FormData): Promise<FormState> {
-  const session = await requireAdmin();
+  const session = await requireAdmin(["admin", "editor"]);
 
   const id = Number(str(fd, "recordId")) || null;
   const title = str(fd, "title");
@@ -63,6 +63,7 @@ export async function saveNewsAction(_prev: FormState, fd: FormData): Promise<Fo
   const isPinned = fd.get("isPinned") === "on";
   const removeCover = fd.get("removeCover") === "on";
   const cover = fileOrNull(fd, "cover");
+  const tags = [...new Set(str(fd, "tags").split(",").map((t) => t.trim().replace(/^#/, "")).filter(Boolean))];
 
   const fieldErrors: Record<string, string> = {};
   if (!title) fieldErrors.title = "กรุณากรอกหัวข้อข่าว";
@@ -74,6 +75,7 @@ export async function saveNewsAction(_prev: FormState, fd: FormData): Promise<Fo
   if (publishMode === "schedule" && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(publishAt)) {
     fieldErrors.publishAt = "กรุณาระบุวันเวลาที่จะเผยแพร่";
   }
+  if (tags.length > 10 || tags.some((t) => t.length > 30)) fieldErrors.tags = "แท็กได้ไม่เกิน 10 คำ คำละไม่เกิน 30 ตัวอักษร";
   if (Object.keys(fieldErrors).length) return { error: "กรุณาตรวจสอบข้อมูล", fieldErrors };
 
   let coverId: string | null = null;
@@ -119,6 +121,12 @@ export async function saveNewsAction(_prev: FormState, fd: FormData): Promise<Fo
     newsId = rows[0].id;
   }
 
+  // FR-NEWS-02: the tag set is replaced as a whole.
+  await query(`DELETE FROM news_tag WHERE news_id = $1`, [newsId]);
+  if (tags.length) {
+    await query(`INSERT INTO news_tag (news_id, tag) SELECT $1, unnest($2::text[]) ON CONFLICT DO NOTHING`, [newsId, tags]);
+  }
+
   await audit(session, id ? "news.update" : "news.create", "news", newsId, {
     title,
     publishMode,
@@ -130,7 +138,7 @@ export async function saveNewsAction(_prev: FormState, fd: FormData): Promise<Fo
 }
 
 export async function deleteNewsAction(fd: FormData): Promise<void> {
-  const session = await requireAdmin();
+  const session = await requireAdmin(["admin", "editor"]);
   const id = Number(str(fd, "recordId"));
   if (!Number.isInteger(id) || id <= 0) return;
 
@@ -142,7 +150,7 @@ export async function deleteNewsAction(fd: FormData): Promise<void> {
 }
 
 export async function togglePublishAction(fd: FormData): Promise<void> {
-  const session = await requireAdmin();
+  const session = await requireAdmin(["admin", "editor"]);
   const id = Number(str(fd, "recordId"));
   if (!Number.isInteger(id) || id <= 0) return;
 
@@ -161,7 +169,7 @@ export async function togglePublishAction(fd: FormData): Promise<void> {
 /* ================= site content (FR-ADM-16 … FR-ADM-17) ================= */
 
 export async function saveSettingsAction(_prev: FormState, fd: FormData): Promise<FormState> {
-  const session = await requireAdmin();
+  const session = await requireAdmin(["admin", "editor"]);
 
   const defs = await query<{ key: string; label: string; kind: string; value: string; max_length: number }>(
     `SELECT key, label, kind, value, max_length FROM site_setting`,
@@ -221,7 +229,7 @@ export async function saveSettingsAction(_prev: FormState, fd: FormData): Promis
 }
 
 export async function replaceImageAction(_prev: FormState, fd: FormData): Promise<FormState> {
-  const session = await requireAdmin();
+  const session = await requireAdmin(["admin", "editor"]);
   const slot = str(fd, "slot");
   const file = fileOrNull(fd, "file");
   const alt = str(fd, "alt");
@@ -255,7 +263,7 @@ export async function replaceImageAction(_prev: FormState, fd: FormData): Promis
 }
 
 export async function resetImageAction(fd: FormData): Promise<void> {
-  const session = await requireAdmin();
+  const session = await requireAdmin(["admin", "editor"]);
   const slot = str(fd, "slot");
   await query(`UPDATE site_image SET file_id = NULL, updated_at = now(), updated_by = $2 WHERE slot = $1`, [
     slot,
@@ -345,4 +353,38 @@ export async function reviewMemberAction(fd: FormData): Promise<void> {
   );
   revalidatePath("/admin/members");
   redirect(`/admin/members/${alumniId}?reviewed=${decision}`);
+}
+
+/* ================= news attachments (FR-NEWS-04) ================= */
+
+export async function addNewsAttachmentAction(_prev: FormState, fd: FormData): Promise<FormState> {
+  const session = await requireAdmin(["admin", "editor"]);
+  const newsId = Number(str(fd, "newsId"));
+  const label = str(fd, "label");
+  const file = fileOrNull(fd, "file");
+  if (!label || label.length > 120) return { fieldErrors: { label: "กรุณาตั้งชื่อเอกสาร (ไม่เกิน 120 ตัวอักษร)" } };
+  if (!file) return { fieldErrors: { file: "กรุณาเลือกไฟล์ PDF" } };
+  const [n] = await query<{ id: number }>(`SELECT id FROM news WHERE id = $1`, [newsId]);
+  if (!n) return { error: "ไม่พบข่าวนี้" };
+  try {
+    const stored = await storeUpload(file, "attachment", { uploadedBy: session.id });
+    await query(`INSERT INTO news_attachment (news_id, file_id, label) VALUES ($1, $2, $3)`, [newsId, stored.id, label]);
+  } catch (err) {
+    if (err instanceof UploadError) return { fieldErrors: { file: err.message } };
+    throw err;
+  }
+  await audit(session, "news.attach", "news", newsId, { label });
+  revalidatePath(`/news/${newsId}`);
+  revalidatePath(`/admin/news/${newsId}`);
+  return { ok: `แนบ “${label}” แล้ว` };
+}
+
+export async function removeNewsAttachmentAction(fd: FormData): Promise<void> {
+  const session = await requireAdmin(["admin", "editor"]);
+  const newsId = Number(str(fd, "newsId"));
+  const fileId = str(fd, "fileId");
+  await query(`DELETE FROM news_attachment WHERE news_id = $1 AND file_id = $2::uuid`, [newsId, fileId]);
+  await audit(session, "news.detach", "news", newsId, { fileId });
+  revalidatePath(`/news/${newsId}`);
+  redirect(`/admin/news/${newsId}#attachments`);
 }

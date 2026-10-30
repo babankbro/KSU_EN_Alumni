@@ -105,3 +105,8 @@ export async function storageReachable(): Promise<boolean> {
     return false;
   }
 }
+
+/** Permanently removes an object; used when a data subject's files are erased. */
+export async function removeObject(key: string): Promise<void> {
+  await getStorage().removeObject(getBucket(), key);
+}
