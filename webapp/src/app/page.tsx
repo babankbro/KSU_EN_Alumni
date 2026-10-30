@@ -42,9 +42,9 @@ export default function HomePage() {
           </p>
 
           <div className="hero-actions">
-            <a href="#" className="btn btn-gold">
+            <Link href="/register" className="btn btn-gold">
               ยืนยันตัวตนศิษย์เก่า
-            </a>
+            </Link>
             <Link href="/directory" className="btn btn-ghost-light">
               ค้นหาเพื่อนร่วมรุ่น
             </Link>
@@ -309,9 +309,9 @@ export default function HomePage() {
             และช่วยให้หลักสูตรปรับตามเส้นทางอาชีพจริงของศิษย์เก่า
           </p>
           <div className="engagement-actions">
-            <a href="#" className="btn btn-on-dark">
+            <Link href="/register" className="btn btn-on-dark">
               อัปเดตโปรไฟล์
-            </a>
+            </Link>
             <Link href="/about" className="link-light">
               ข้อมูลของฉันถูกใช้เพื่ออะไร?
             </Link>

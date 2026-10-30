@@ -76,9 +76,9 @@ export default function SiteHeader() {
         </nav>
 
         <div className="header-cta">
-          <a href="#" className="btn btn-outline btn-sm">
+          <Link href="/register" className="btn btn-outline btn-sm">
             ลงทะเบียน / Claim โปรไฟล์
-          </a>
+          </Link>
           <a href="#" className="btn btn-primary btn-sm">
             เข้าสู่ระบบ
           </a>
