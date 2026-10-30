@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { useKeepValues } from "@/components/forms/useKeepValues";
 import { saveSettingsAction, type FormState } from "@/app/admin/actions";
 
 export interface SettingDef {
@@ -22,10 +23,11 @@ const INPUT_TYPE: Record<SettingDef["kind"], string> = {
 
 export default function SettingsForm({ groups }: { groups: { name: string; items: SettingDef[] }[] }) {
   const [state, action, pending] = useActionState<FormState, FormData>(saveSettingsAction, {});
+  const keepValues = useKeepValues(action);
   const fe = state.fieldErrors ?? {};
 
   return (
-    <form action={action} className="admin-card" noValidate>
+    <form action={action} onSubmit={keepValues} className="admin-card" noValidate>
       <h2>ข้อความบนเว็บไซต์</h2>
       {state.error ? <p className="flash flash-error" role="alert">{state.error}</p> : null}
       {state.ok ? <p className="flash flash-ok" role="status">{state.ok}</p> : null}

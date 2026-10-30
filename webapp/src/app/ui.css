@@ -1,5 +1,7 @@
 /* ============================================================
-   Back office — uses the same tokens as the public site
+   Shared UI components — tables, status pills, KPI tiles, bar lists,
+   flash messages, key/value lists — used by the back office and by the
+   member area. Back-office-only rules are prefixed .admin-.
    (Visual Design §10: admin is data-first, not a copy of the public look)
    ============================================================ */
 
@@ -572,4 +574,241 @@ a.kpi:hover {
   border: 1px solid var(--color-input-border);
   background: #fff;
   font: inherit;
+}
+
+/* ============================================================
+   Shared form helpers (ActionForm / Field) and member area
+   ============================================================ */
+.form-actions-inline {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+.field textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: var(--radius-btn);
+  border: 1px solid var(--color-input-border);
+  font: inherit;
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  resize: vertical;
+  background: #fff;
+}
+.field input[type="password"],
+.field input[type="url"],
+.field input[type="number"],
+.field input[type="search"],
+.field input[type="datetime-local"] {
+  height: 48px;
+  width: 100%;
+  padding: 0 14px;
+  border-radius: var(--radius-btn);
+  border: 1px solid var(--color-input-border);
+  background: #fff;
+  font: inherit;
+  font-size: var(--fs-body);
+}
+.field textarea:focus,
+.field input[type="password"]:focus,
+.field input[type="url"]:focus,
+.field input[type="number"]:focus,
+.field input[type="search"]:focus,
+.field input[type="datetime-local"]:focus {
+  outline: none;
+  border-color: var(--color-primary-600);
+  box-shadow: var(--focus-ring);
+}
+.check-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  min-height: 32px;
+  cursor: pointer;
+  font-weight: 400 !important;
+}
+.check-row input {
+  width: 20px;
+  height: 20px;
+  margin-top: 3px;
+  accent-color: var(--color-primary-700);
+  flex: none;
+}
+
+/* ---------- auth pages ---------- */
+.auth-wrap {
+  display: grid;
+  place-items: start center;
+  padding-block: 48px 72px;
+}
+.auth-card {
+  width: 100%;
+  max-width: 460px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  box-shadow: var(--shadow);
+}
+.auth-card h1 {
+  font-size: 26px;
+  margin-bottom: 4px;
+}
+.auth-card form.admin-card {
+  border: 0;
+  padding: 0;
+  margin: 16px 0 0;
+  box-shadow: none;
+}
+.auth-links {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+  font-size: 15px;
+}
+.btn-line {
+  background: #06c755;
+  color: #fff;
+  width: 100%;
+}
+.btn-line:hover {
+  background: #05a648;
+}
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--color-muted);
+  font-size: 13px;
+  margin: 18px 0;
+}
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid var(--color-border);
+}
+
+/* ---------- member area (/me) ---------- */
+.me-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 28px;
+  align-items: start;
+}
+.me-nav {
+  position: sticky;
+  top: 100px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.me-nav a {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: var(--radius-btn);
+  color: var(--color-ink);
+  font-size: 15px;
+}
+.me-nav a:hover {
+  background: var(--color-primary-100);
+  text-decoration: none;
+}
+.me-nav a[aria-current="page"] {
+  background: var(--color-primary-100);
+  color: var(--color-primary-700);
+  font-weight: 700;
+  box-shadow: inset 3px 0 0 var(--color-primary-700);
+}
+.me-nav .nav-count {
+  background: var(--color-primary-700);
+  color: #fff;
+  border-radius: 999px;
+  font-size: 12px;
+  padding: 1px 8px;
+}
+.me-nav form button {
+  width: 100%;
+  text-align: left;
+  min-height: 44px;
+  padding: 8px 12px;
+  background: none;
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  margin-top: 6px;
+  color: var(--color-muted);
+}
+.status-banner {
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  margin-bottom: 20px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+.status-banner.pending {
+  border-color: var(--badge-stale-fg);
+  background: var(--badge-stale-bg);
+}
+.status-banner.verified {
+  border-color: var(--color-success);
+  background: var(--badge-fresh-bg);
+}
+.vis-grid {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) repeat(3, auto);
+  gap: 8px 18px;
+  align-items: center;
+  font-size: 15px;
+}
+.vis-grid .vis-head {
+  font-size: 13px;
+  color: var(--color-muted);
+  font-weight: 600;
+}
+.vis-grid input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--color-primary-700);
+}
+.inline-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.list-plain > li {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.list-plain > li:last-child {
+  border-bottom: 0;
+}
+.notif-unread {
+  border-left: 3px solid var(--color-primary-700);
+  padding-left: 12px !important;
+}
+
+@media (max-width: 900px) {
+  .me-layout {
+    grid-template-columns: 1fr;
+  }
+  .me-nav {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .vis-grid {
+    grid-template-columns: 1fr repeat(3, auto);
+    font-size: 14px;
+  }
 }

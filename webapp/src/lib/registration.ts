@@ -8,7 +8,7 @@
  *
  * Kept free of React so the rules can be unit-tested on their own.
  */
-import type { DegreeLevel, Visibility } from "./types";
+import type { Visibility } from "./types";
 
 export type RegistrationPath = "claim" | "new";
 
@@ -92,7 +92,8 @@ export interface RegistrationForm {
 
   admissionYear: string;
   graduationYear: string;
-  degreeLevel: DegreeLevel;
+  /** Filters the programme list; the programme row carries the real level. */
+  degreeLevel: string;
   programId: string;
 
   /* --- ขั้นที่ 3: ติดต่อและความเป็นส่วนตัว --- */
@@ -102,6 +103,9 @@ export interface RegistrationForm {
   province: string;
   /** FR-PROF-03 — the applicant decides who may see each contact field. */
   visibility: Visibility;
+  /** FR-AUTH-04 — the account is created with the application. */
+  password: string;
+  passwordConfirm: string;
 
   /* --- ขั้นที่ 4: ความยินยอม --- */
   consentData: boolean;
@@ -111,7 +115,8 @@ export interface RegistrationForm {
 
 export const TITLE_OPTIONS = ["นาย", "นาง", "นางสาว", "อื่น ๆ"] as const;
 
-export const DEGREE_OPTIONS: DegreeLevel[] = ["ปวส.", "ป.ตรี", "ป.โท"];
+/** Degree levels as stored in the programme table (Database Design §1). */
+export const DEGREE_OPTIONS = ["ปวส.", "อส.บ.", "ทล.บ.", "วศ.บ.", "สถ.บ."] as const;
 
 export const VISIBILITY_OPTIONS: {
   value: Visibility;
@@ -153,13 +158,15 @@ export function emptyForm(): RegistrationForm {
     formerNames: [],
     admissionYear: "",
     graduationYear: "",
-    degreeLevel: "ป.ตรี",
+    degreeLevel: "",
     programId: "",
     email: "",
     phone: "",
     lineId: "",
     province: "",
     visibility: "members",
+    password: "",
+    passwordConfirm: "",
     consentData: false,
     consentDirectory: false,
     consentNews: false,
@@ -167,6 +174,17 @@ export function emptyForm(): RegistrationForm {
 }
 
 export type Errors = Partial<Record<string, string>>;
+
+/**
+ * FR-AUTH-04 — shared by the registration form, student sign-up, password
+ * reset and the server, so the rule cannot drift between them.
+ */
+export function passwordProblem(pw: string): string | null {
+  if (pw.length < 10) return "รหัสผ่านต้องยาวอย่างน้อย 10 ตัวอักษร";
+  if (pw.length > 128) return "รหัสผ่านยาวเกินไป";
+  if (!/[A-Za-z]/.test(pw) || !/\d/.test(pw)) return "รหัสผ่านต้องมีทั้งตัวอักษรและตัวเลข";
+  return null;
+}
 
 /* ---------- field-level rules ---------- */
 
@@ -281,6 +299,13 @@ export function validateStep3(form: RegistrationForm): Errors {
   const phone = form.phone.replace(/[\s-]/g, "");
   if (phone && (!DIGITS_ONLY.test(phone) || phone.length < 9 || phone.length > 10)) {
     e.phone = "เบอร์โทรศัพท์ต้องเป็นตัวเลข 9–10 หลัก";
+  }
+
+  const pwIssue = passwordProblem(form.password);
+  if (pwIssue) {
+    e.password = pwIssue;
+  } else if (form.password !== form.passwordConfirm) {
+    e.passwordConfirm = "รหัสผ่านทั้งสองช่องไม่ตรงกัน";
   }
 
   return e;

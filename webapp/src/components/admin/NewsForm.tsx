@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { useKeepValues } from "@/components/forms/useKeepValues";
 import { saveNewsAction, type FormState } from "@/app/admin/actions";
 
 export interface NewsFormValues {
@@ -29,6 +30,7 @@ function Counter({ value, max }: { value: string; max: number }) {
 
 export default function NewsForm({ initial }: { initial: NewsFormValues }) {
   const [state, action, pending] = useActionState<FormState, FormData>(saveNewsAction, {});
+  const keepValues = useKeepValues(action);
   const [title, setTitle] = useState(initial.title);
   const [summary, setSummary] = useState(initial.summary);
   const [mode, setMode] = useState(initial.publishMode);
@@ -37,7 +39,7 @@ export default function NewsForm({ initial }: { initial: NewsFormValues }) {
   const fe = state.fieldErrors ?? {};
 
   return (
-    <form action={action} className="admin-card" noValidate>
+    <form action={action} onSubmit={keepValues} className="admin-card" noValidate>
       {initial.id ? <input type="hidden" name="id" value={initial.id} /> : null}
 
       {state.error ? <p className="flash flash-error" role="alert">{state.error}</p> : null}

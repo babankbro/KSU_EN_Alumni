@@ -5,6 +5,7 @@
 #   web    http://localhost:3000
 #   minio  http://localhost:9001   (console; credentials from .env)
 #   db     localhost:5432
+#   mail   http://localhost:8025   (Mailpit — development mail catcher)
 #
 # The MinIO bucket is created by the web app on first use
 # (src/lib/server/storage.ts → ensureBucket), so no init container is needed.
@@ -63,6 +64,8 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+      mailpit:
+        condition: service_started
     environment:
       NODE_ENV: production
       NEXT_TELEMETRY_DISABLED: "1"
@@ -73,16 +76,61 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin_dev_only}
       MINIO_BUCKET: ${MINIO_BUCKET:-alumni-files}
-      # Public hostname used in presigned URLs handed to the browser.
-      MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-localhost}
-      MINIO_PUBLIC_PORT: ${MINIO_API_PORT:-9000}
       POLICY_VERSION: ${POLICY_VERSION:-2569-10-30}
       ADMIN_BOOTSTRAP_EMAIL: ${ADMIN_BOOTSTRAP_EMAIL:-}
       ADMIN_BOOTSTRAP_PASSWORD: ${ADMIN_BOOTSTRAP_PASSWORD:-}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
       TRUST_PROXY: ${TRUST_PROXY:-false}
+      APP_SECRET: ${APP_SECRET:-}
+      APP_URL: ${APP_URL:-http://localhost:3000}
+      CRON_SECRET: ${CRON_SECRET:-}
+      SMTP_HOST: ${SMTP_HOST:-mailpit}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      MAIL_FROM: ${MAIL_FROM:-no-reply@localhost}
+      LINE_LOGIN_CHANNEL_ID: ${LINE_LOGIN_CHANNEL_ID:-}
+      LINE_LOGIN_CHANNEL_SECRET: ${LINE_LOGIN_CHANNEL_SECRET:-}
+      LINE_MESSAGING_ACCESS_TOKEN: ${LINE_MESSAGING_ACCESS_TOKEN:-}
+      DEMO_SEED_MEDIA: ${DEMO_SEED_MEDIA:-false}
     ports:
       - "${WEB_PORT:-3000}:3000"
+    restart: unless-stopped
+
+  # FR-NOTI: delivery and scheduled tasks. Reuses the web image, so nothing
+  # extra to pull; it only calls the app's internal endpoint once a minute.
+  cron:
+    image: ksu-en-alumni:latest
+    container_name: ksu-alumni-cron
+    depends_on:
+      web:
+        condition: service_healthy
+    environment:
+      CRON_SECRET: ${CRON_SECRET:-}
+    # The web image's HEALTHCHECK probes a server this container does not run.
+    healthcheck:
+      disable: true
+    entrypoint: ["node", "-e"]
+    command:
+      - |
+        const tick = async () => {
+          try {
+            const r = await fetch("http://web:3000/api/internal/cron", { method: "POST", headers: { "x-cron-secret": process.env.CRON_SECRET || "" } });
+            const t = await r.text();
+            if (!r.ok || t.includes("error")) console.log(new Date().toISOString(), r.status, t.slice(0, 300));
+          } catch (e) { console.log(new Date().toISOString(), "cron call failed:", e.message); }
+        };
+        tick(); setInterval(tick, 60000);
+    restart: unless-stopped
+
+  # Development mail catcher: every email the app sends lands here.
+  # Web UI: http://localhost:${MAILPIT_UI_PORT:-8025}. Replace with real SMTP in production.
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: ksu-alumni-mailpit
+    ports:
+      - "${MAILPIT_UI_PORT:-8025}:8025"
     restart: unless-stopped
 
 volumes:

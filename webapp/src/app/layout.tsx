@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import "./ui.css";
 
 // §3 Typography — Noto Sans Thai for Thai text, Inter for Latin and numerals.
 //

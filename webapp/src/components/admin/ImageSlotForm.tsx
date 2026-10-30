@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { useKeepValues } from "@/components/forms/useKeepValues";
 import { replaceImageAction, resetImageAction, type FormState } from "@/app/admin/actions";
 
 export interface ImageSlotDef {
@@ -14,6 +15,7 @@ export interface ImageSlotDef {
 
 export default function ImageSlotForm({ def }: { def: ImageSlotDef }) {
   const [state, action, pending] = useActionState<FormState, FormData>(replaceImageAction, {});
+  const keepValues = useKeepValues(action);
   const [preview, setPreview] = useState<string | null>(null);
   const shown = preview ?? def.currentSrc;
   const inputId = `img-${def.slot.replace(/\./g, "-")}`;
@@ -40,7 +42,7 @@ export default function ImageSlotForm({ def }: { def: ImageSlotDef }) {
         {state.error ? <p className="flash flash-error" role="alert">{state.error}</p> : null}
         {state.ok ? <p className="flash flash-ok" role="status">{state.ok}</p> : null}
 
-        <form action={action} style={{ display: "grid", gap: 10 }}>
+        <form action={action} onSubmit={keepValues} style={{ display: "grid", gap: 10 }}>
           <input type="hidden" name="slot" value={def.slot} />
           <div className="field">
             <label htmlFor={inputId}>เลือกรูปใหม่</label>

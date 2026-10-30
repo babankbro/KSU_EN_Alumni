@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { PROGRAMS } from "@/lib/data";
 import {
-  DEGREE_OPTIONS,
   TITLE_OPTIONS,
   VISIBILITY_OPTIONS,
   emptyForm,
@@ -13,7 +12,7 @@ import {
   type RegistrationForm as FormState,
   type RegistrationPath,
 } from "@/lib/registration";
-import type { DegreeLevel, Visibility } from "@/lib/types";
+import type { Visibility } from "@/lib/types";
 import type { ProgramOption } from "@/app/api/programs/route";
 import PhotoDropzone from "./PhotoDropzone";
 
@@ -30,9 +29,7 @@ interface ProgramLevel {
 }
 
 interface SubmitResult {
-  id: string;
-  status: "submitted" | "matched";
-  matched: boolean;
+  status: "submitted";
 }
 
 /**
@@ -160,7 +157,12 @@ export default function RegistrationForm() {
         focusSummary();
         return;
       }
-      if (!res.ok || !("id" in body)) {
+      if (res.status === 409 && "fields" in body && body.fields) {
+        setErrors(body.fields);
+        focusSummary();
+        return;
+      }
+      if (!res.ok || !("status" in body)) {
         throw new Error(("error" in body && body.error) || "ส่งใบสมัครไม่สำเร็จ");
       }
       setResult(body);
@@ -647,16 +649,22 @@ function StepName({
           )}
         </Field>
 
-        <Field id="degreeLevel" label="ระดับการศึกษา" required>
+        <Field id="degreeLevel" label="ระดับการศึกษา" hint="ใช้กรองรายการสาขาด้านล่าง">
           {(p) => (
             <select
               {...p}
               value={form.degreeLevel}
-              onChange={(e) => set("degreeLevel", e.target.value as DegreeLevel)}
+              onChange={(e) => {
+                set("degreeLevel", e.target.value);
+                // A programme from another level is no longer valid.
+                const current = programs ? findProgram(programs, form.programId) : undefined;
+                if (current && e.target.value && current.degreeLevel !== e.target.value) set("programId", "");
+              }}
             >
-              {DEGREE_OPTIONS.map((d) => (
-                <option key={d} value={d}>
-                  {d}
+              <option value="">ทุกระดับ</option>
+              {(programs ?? []).map((lvl) => (
+                <option key={lvl.level} value={lvl.level}>
+                  {lvl.level}
                 </option>
               ))}
             </select>
@@ -684,7 +692,9 @@ function StepName({
               disabled={programs === null}
             >
               <option value="">— เลือกสาขาวิชา —</option>
-              {(programs ?? []).map((lvl) => (
+              {(programs ?? [])
+                .filter((lvl) => !form.degreeLevel || lvl.level === form.degreeLevel)
+                .map((lvl) => (
                 <optgroup key={lvl.level} label={lvl.level}>
                   {lvl.programs.map((prog) => (
                     <option key={prog.code} value={prog.code}>
@@ -754,6 +764,38 @@ function StepContact({ form, set, errors }: StepProps) {
         <Field id="province" label="จังหวัดที่อยู่ปัจจุบัน">
           {(p) => (
             <input {...p} type="text" value={form.province} onChange={(e) => set("province", e.target.value)} />
+          )}
+        </Field>
+      </div>
+
+      <h3 className="form-subhead">ตั้งรหัสผ่านสำหรับเข้าสู่ระบบ</h3>
+      <div className="field-grid">
+        <Field
+          id="password"
+          label="รหัสผ่าน"
+          required
+          error={errors.password}
+          hint="อย่างน้อย 10 ตัวอักษร มีทั้งตัวอักษรและตัวเลข"
+        >
+          {(p) => (
+            <input
+              {...p}
+              type="password"
+              autoComplete="new-password"
+              value={form.password}
+              onChange={(e) => set("password", e.target.value)}
+            />
+          )}
+        </Field>
+        <Field id="passwordConfirm" label="ยืนยันรหัสผ่าน" required error={errors.passwordConfirm}>
+          {(p) => (
+            <input
+              {...p}
+              type="password"
+              autoComplete="new-password"
+              value={form.passwordConfirm}
+              onChange={(e) => set("passwordConfirm", e.target.value)}
+            />
           )}
         </Field>
       </div>
@@ -910,7 +952,6 @@ function StepConsent({ form, set, errors, programs }: StepProps & { programs: Pr
 
 function SubmittedPanel({
   form,
-  result,
   programs,
 }: {
   form: FormState;
@@ -919,17 +960,9 @@ function SubmittedPanel({
 }) {
   const program = findProgram(programs, form.programId);
 
-  let message: string;
-  if (form.path === "claim" && result.matched) {
-    message =
-      "ระบบจับคู่ข้อมูลของคุณกับระเบียนจากงานทะเบียนได้แล้ว เจ้าหน้าที่จะยืนยันและเปิดใช้โปรไฟล์ภายใน 1 วันทำการ";
-  } else if (form.path === "claim") {
-    message =
-      "ยังไม่พบระเบียนที่ตรงกับรหัสนักศึกษาและข้อมูลยืนยัน ใบสมัครของคุณถูกส่งให้เจ้าหน้าที่ตรวจสอบด้วยตนเอง โดยทั่วไปใช้เวลาไม่เกิน 3 วันทำการ";
-  } else {
-    message = "ใบสมัครของคุณเข้าคิวรอเจ้าหน้าที่ตรวจสอบ โดยทั่วไปใช้เวลาไม่เกิน 3 วันทำการ";
-  }
-
+  // Deliberately identical for every outcome: telling the applicant whether
+  // the identity proof matched would let anyone test birth dates against a
+  // student code (FR-AUTH-06).
   return (
     <div className="submitted-panel" role="status">
       <span className="submitted-icon" aria-hidden="true">
@@ -938,13 +971,13 @@ function SubmittedPanel({
       <h2>ส่งใบสมัครเรียบร้อย</h2>
       <p>
         ขอบคุณ {previewName(form)}
-        {program ? ` (${program.degreeLevel} ${program.nameTh})` : ""} — {message}
+        {program ? ` (${program.degreeLevel} ${program.nameTh})` : ""} — เจ้าหน้าที่งานศิษย์เก่าสัมพันธ์จะตรวจสอบข้อมูล
+        และแจ้งผลทางอีเมล โดยทั่วไปใช้เวลาไม่เกิน 3 วันทำการ
       </p>
-      <p className="field-hint">
-        หมายเลขอ้างอิง <code>{result.id}</code>
-      </p>
-      <p className="info-note">
-        หน้านี้เป็นเว็บไซต์ร่าง ข้อมูลถูกบันทึกลงฐานข้อมูลทดสอบและรูปถูกเก็บใน MinIO ภายในเครื่องของคุณเท่านั้น
+      <p>ระหว่างนี้คุณเข้าสู่ระบบแล้ว ดูสถานะใบสมัครและแก้ไขข้อมูลได้ที่หน้า “ของฉัน”</p>
+      <p style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+        <a href="/me" className="btn btn-primary">ไปที่หน้าของฉัน</a>
+        <a href="/" className="btn btn-outline">กลับหน้าแรก</a>
       </p>
     </div>
   );

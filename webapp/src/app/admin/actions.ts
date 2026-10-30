@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getPool, query } from "@/lib/server/db";
 import { audit, login, logout, requireAdmin } from "@/lib/server/auth";
 import { storeUpload, UploadError } from "@/lib/server/files";
+import { enqueue } from "@/lib/server/notify";
 
 /**
  * Back-office mutations. Every action re-checks the session itself:
@@ -324,6 +325,24 @@ export async function reviewMemberAction(fd: FormData): Promise<void> {
   }
 
   await audit(session, decision === "approve" ? "member.approve" : "member.reject", "alumni", alumniId, { note });
+
+  // Tell the applicant — before accounts existed they had no way to learn the outcome.
+  const accounts = await query<{ id: string }>(`SELECT id FROM account WHERE alumni_id = $1`, [alumniId]);
+  await enqueue(
+    "account",
+    accounts.map((a) => a.id),
+    decision === "approve"
+      ? {
+          title: "ยืนยันตัวตนศิษย์เก่าเรียบร้อย",
+          body: "เจ้าหน้าที่ยืนยันข้อมูลของคุณแล้ว ตอนนี้คุณปรากฏในทำเนียบศิษย์เก่า (ถ้ายินยอม) ดูข้อมูลติดต่อเพื่อนร่วมรุ่น ส่งข่าว และลงทะเบียนกิจกรรมได้",
+          link: "/me",
+        }
+      : {
+          title: "ใบสมัครศิษย์เก่ายังไม่ผ่านการตรวจสอบ",
+          body: `เจ้าหน้าที่ไม่สามารถยืนยันข้อมูลของคุณได้${note ? `\nหมายเหตุ: ${note}` : ""}\nกรุณาติดต่องานศิษย์เก่าสัมพันธ์`,
+          link: "/me",
+        },
+  );
   revalidatePath("/admin/members");
   redirect(`/admin/members/${alumniId}?reviewed=${decision}`);
 }

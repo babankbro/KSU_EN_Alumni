@@ -18,7 +18,12 @@ const NAV = [
   { href: "/about", label: "เกี่ยวกับเรา" },
 ];
 
-export default function SiteHeader() {
+export default function SiteHeader({
+  member,
+}: {
+  /** Signed-in alumnus or student; null for visitors. */
+  member?: { displayName: string; unread: number } | null;
+}) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -76,12 +81,25 @@ export default function SiteHeader() {
         </nav>
 
         <div className="header-cta">
-          <Link href="/register" className="btn btn-outline btn-sm">
-            ลงทะเบียน / Claim โปรไฟล์
-          </Link>
-          <a href="#" className="btn btn-primary btn-sm">
-            เข้าสู่ระบบ
-          </a>
+          {member ? (
+            <>
+              <Link href="/me/notifications" className="btn btn-outline btn-sm" aria-label={`การแจ้งเตือน ${member.unread} รายการที่ยังไม่อ่าน`}>
+                🔔{member.unread ? ` ${member.unread}` : ""}
+              </Link>
+              <Link href="/me" className="btn btn-primary btn-sm">
+                ของฉัน · {member.displayName.split(" ")[0]}
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link href="/register" className="btn btn-outline btn-sm">
+                ลงทะเบียน / Claim โปรไฟล์
+              </Link>
+              <Link href="/login" className="btn btn-primary btn-sm">
+                เข้าสู่ระบบ
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </header>
