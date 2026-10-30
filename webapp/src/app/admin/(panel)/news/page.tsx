@@ -90,7 +90,7 @@ export default async function AdminNewsPage({
                           แก้ไข<span className="sr-only"> {n.title}</span>
                         </Link>
                         <form action={togglePublishAction}>
-                          <input type="hidden" name="id" value={n.id} />
+                          <input type="hidden" name="recordId" value={n.id} />
                           <button type="submit" className="btn btn-outline btn-sm">
                             {n.published_at ? "ยกเลิกเผยแพร่" : "เผยแพร่"}
                           </button>
@@ -101,7 +101,7 @@ export default async function AdminNewsPage({
                           </Link>
                         ) : null}
                         <form action={deleteNewsAction}>
-                          <input type="hidden" name="id" value={n.id} />
+                          <input type="hidden" name="recordId" value={n.id} />
                           <ConfirmButton message={`ลบข่าว “${n.title}” ถาวร?`} className="btn btn-danger btn-sm">
                             ลบ
                           </ConfirmButton>

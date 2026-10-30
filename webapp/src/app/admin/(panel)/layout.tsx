@@ -4,12 +4,19 @@ import { query } from "@/lib/server/db";
 import { logoutAction } from "../actions";
 import AdminNav from "@/components/admin/AdminNav";
 
+const ROLE_LABEL = { admin: "ผู้ดูแลระบบ", editor: "ผู้แก้ไขเนื้อหา", faculty: "อาจารย์ / กรรมการ" } as const;
+
 export default async function AdminPanelLayout({ children }: { children: React.ReactNode }) {
   const session = await requireAdmin();
 
-  const [pending] = await query<{ n: string }>(
-    `SELECT count(*) AS n FROM alumni WHERE claim_status = 'pending'`,
-  ).catch(() => [{ n: "0" }]);
+  const [pending] = await query<{ n: string; queue: string }>(
+    `SELECT (SELECT count(*) FROM alumni WHERE claim_status = 'pending') AS n,
+            (SELECT count(*) FROM alumni_post WHERE moderation_status = 'pending' AND NOT is_draft)
+          + (SELECT count(*) FROM job_post WHERE moderation_status = 'pending')
+          + (SELECT count(*) FROM kb_article WHERE moderation_status = 'pending')
+          + (SELECT count(DISTINCT (target_type, target_id)) FROM content_report WHERE status = 'open') AS queue`,
+  ).catch(() => [{ n: "0", queue: "0" }]);
+  const role = session.role;
 
   const items = [
     { href: "/admin", label: "ภาพรวม", icon: "▦" },
@@ -17,7 +24,11 @@ export default async function AdminPanelLayout({ children }: { children: React.R
     ...(session.role === "admin" || session.role === "faculty"
       ? [{ href: "/admin/members", label: "สมาชิก", icon: "👥", count: Number(pending?.n ?? 0) }]
       : []),
+    ...(role === "admin" || role === "editor"
+      ? [{ href: "/admin/moderation", label: "ตรวจสอบเนื้อหา", icon: "✓", count: Number(pending?.queue ?? 0) }]
+      : []),
     { href: "/admin/news", label: "ข่าวประชาสัมพันธ์", icon: "📰" },
+    ...(role === "admin" || role === "editor" ? [{ href: "/admin/events", label: "กิจกรรม", icon: "📅" }] : []),
     { href: "/admin/content", label: "ข้อมูลและรูปภาพเว็บ", icon: "🖼" },
   ];
 
@@ -34,7 +45,7 @@ export default async function AdminPanelLayout({ children }: { children: React.R
         <AdminNav items={items} />
         <div className="admin-user">
           <strong>{session.displayName}</strong>
-          <span className="role">{session.role === "admin" ? "ผู้ดูแลระบบ" : "ผู้แก้ไขเนื้อหา"}</span>
+          <span className="role">{ROLE_LABEL[role]}</span>
           <div className="small muted" style={{ color: "rgba(255,255,255,.6)" }}>{session.email}</div>
           <form action={logoutAction}>
             <button type="submit">ออกจากระบบ</button>

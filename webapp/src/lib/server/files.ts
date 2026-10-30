@@ -7,7 +7,9 @@ import { buildObjectKey, getBucket, putObject } from "./storage";
  * admin back office alike — so the safety checks cannot drift apart.
  */
 
-export type StoredPurpose = "profile_photo" | "document" | "news_image" | "site_image";
+export type StoredPurpose =
+  | "profile_photo" | "document" | "news_image" | "site_image"
+  | "post_image" | "event_cover" | "attachment" | "gallery" | "nomination";
 
 export const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
@@ -24,10 +26,15 @@ export const PURPOSE_RULES: Record<StoredPurpose, PurposeRule> = {
   document: { types: ["application/pdf"], maxBytes: 10 * MB, prefix: "documents" },
   news_image: { types: IMAGE_TYPES, maxBytes: 8 * MB, prefix: "news" },
   site_image: { types: IMAGE_TYPES, maxBytes: 8 * MB, prefix: "site" },
+  post_image: { types: IMAGE_TYPES, maxBytes: 5 * MB, prefix: "posts" },
+  event_cover: { types: IMAGE_TYPES, maxBytes: 8 * MB, prefix: "events" },
+  attachment: { types: ["application/pdf"], maxBytes: 10 * MB, prefix: "attachments" },
+  gallery: { types: IMAGE_TYPES, maxBytes: 8 * MB, prefix: "gallery" },
+  nomination: { types: ["application/pdf", ...IMAGE_TYPES], maxBytes: 10 * MB, prefix: "awards" },
 };
 
 /** Purposes whose files may be served to anonymous visitors. */
-export const PUBLIC_PURPOSES: StoredPurpose[] = ["news_image", "site_image"];
+export const PUBLIC_PURPOSES: StoredPurpose[] = ["news_image", "site_image", "event_cover", "gallery"];
 
 // Check the first bytes, not just the declared MIME type: a renamed text file
 // must not pass as an image.

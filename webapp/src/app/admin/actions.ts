@@ -53,7 +53,7 @@ const NEWS_LIMITS = { title: 200, summary: 400, body: 20000, category: 60 };
 export async function saveNewsAction(_prev: FormState, fd: FormData): Promise<FormState> {
   const session = await requireAdmin();
 
-  const id = Number(str(fd, "id")) || null;
+  const id = Number(str(fd, "recordId")) || null;
   const title = str(fd, "title");
   const summary = str(fd, "summary");
   const body = typeof fd.get("body") === "string" ? (fd.get("body") as string).trim() : "";
@@ -131,7 +131,7 @@ export async function saveNewsAction(_prev: FormState, fd: FormData): Promise<Fo
 
 export async function deleteNewsAction(fd: FormData): Promise<void> {
   const session = await requireAdmin();
-  const id = Number(str(fd, "id"));
+  const id = Number(str(fd, "recordId"));
   if (!Number.isInteger(id) || id <= 0) return;
 
   const rows = await query<{ title: string }>(`DELETE FROM news WHERE id = $1 RETURNING title`, [id]);
@@ -143,7 +143,7 @@ export async function deleteNewsAction(fd: FormData): Promise<void> {
 
 export async function togglePublishAction(fd: FormData): Promise<void> {
   const session = await requireAdmin();
-  const id = Number(str(fd, "id"));
+  const id = Number(str(fd, "recordId"));
   if (!Number.isInteger(id) || id <= 0) return;
 
   const rows = await query<{ published: boolean }>(

@@ -108,7 +108,7 @@ export async function addFormerNameAction(_p: FormState, fd: FormData): Promise<
 
 export async function removeFormerNameAction(fd: FormData): Promise<void> {
   const { alumniId } = await alumniOf();
-  await query(`DELETE FROM alumni_former_name WHERE id = $1 AND alumni_id = $2`, [Number(str(fd, "id")), alumniId]);
+  await query(`DELETE FROM alumni_former_name WHERE id = $1 AND alumni_id = $2`, [Number(str(fd, "recordId")), alumniId]);
   revalidatePath("/me/profile");
   redirect("/me/profile");
 }
@@ -149,7 +149,7 @@ function monthOrNull(v: string): string | null {
 
 export async function saveEmploymentAction(_p: FormState, fd: FormData): Promise<FormState> {
   const { acc, alumniId } = await alumniOf();
-  const id = Number(str(fd, "id")) || null;
+  const id = Number(str(fd, "recordId")) || null;
   const organization = str(fd, "organization");
   const position = str(fd, "position");
   const jobCategory = str(fd, "jobCategory");
@@ -209,7 +209,7 @@ export async function saveEmploymentAction(_p: FormState, fd: FormData): Promise
 
 export async function deleteEmploymentAction(fd: FormData): Promise<void> {
   const { alumniId } = await alumniOf();
-  await query(`DELETE FROM employment WHERE id = $1 AND alumni_id = $2`, [Number(str(fd, "id")), alumniId]);
+  await query(`DELETE FROM employment WHERE id = $1 AND alumni_id = $2`, [Number(str(fd, "recordId")), alumniId]);
   await touchProfile(alumniId);
   redirect("/me/career");
 }

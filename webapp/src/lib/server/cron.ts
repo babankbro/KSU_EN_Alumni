@@ -31,7 +31,7 @@ async function eventReminders(): Promise<number> {
      FROM event_registration r
      JOIN event e ON e.id = r.event_id
      JOIN account ac ON ac.alumni_id = r.alumni_id
-     WHERE r.cancelled_at IS NULL AND r.reminded_at IS NULL
+     WHERE r.cancelled_at IS NULL AND r.reminded_at IS NULL AND e.is_published
        AND e.starts_at BETWEEN now() AND now() + interval '36 hours'`,
   );
   for (const r of rows) {
@@ -59,7 +59,8 @@ async function jobMatches(): Promise<number> {
       `SELECT DISTINCT ac.id AS account_id
        FROM account ac
        LEFT JOIN alumni a ON a.id = ac.alumni_id
-       WHERE ac.is_active AND (
+       WHERE ac.is_active AND (ac.role = 'student' OR a.claim_status = 'verified')
+         AND a.id IS DISTINCT FROM (SELECT posted_by FROM job_post WHERE id = $1) AND (
          EXISTS (SELECT 1 FROM job_post_skill js JOIN alumni_skill s ON s.skill_id = js.skill_id
                  WHERE js.job_post_id = $1 AND s.alumni_id = a.id)
          OR EXISTS (SELECT 1 FROM job_post_program jp

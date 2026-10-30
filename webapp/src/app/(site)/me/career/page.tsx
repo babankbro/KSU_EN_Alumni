@@ -18,7 +18,7 @@ type Job = {
 function JobFields({ j, categories }: { j?: Job; categories: string[] }) {
   return (
     <>
-      {j ? <input type="hidden" name="id" value={j.id} /> : null}
+      {j ? <input type="hidden" name="recordId" value={j.id} /> : null}
       <div className="field-grid">
         <Field name="organization" label="หน่วยงาน / บริษัท" defaultValue={j?.organization} required />
         <Field name="position" label="ตำแหน่ง" defaultValue={j?.position} required />
@@ -85,7 +85,7 @@ export default async function CareerPage() {
             <JobFields j={j} categories={categories} />
           </ActionForm>
           <form action={deleteEmploymentAction} style={{ marginTop: 8 }}>
-            <input type="hidden" name="id" value={j.id} />
+            <input type="hidden" name="recordId" value={j.id} />
             <button type="submit" className="link-danger">ลบรายการนี้</button>
           </form>
         </details>

@@ -76,7 +76,7 @@ export default async function MyProfilePage() {
               <li key={f.id} className="inline-actions" style={{ justifyContent: "space-between" }}>
                 <span>{f.first_name_th} {f.last_name_th}</span>
                 <form action={removeFormerNameAction}>
-                  <input type="hidden" name="id" value={f.id} />
+                  <input type="hidden" name="recordId" value={f.id} />
                   <button type="submit" className="link-danger">ลบ<span className="sr-only"> {f.first_name_th} {f.last_name_th}</span></button>
                 </form>
               </li>

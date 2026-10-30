@@ -59,7 +59,9 @@ export default function ActionForm({
         // successful forms that should clear use resetOnSuccess instead.
         onSubmit={(e) => {
           e.preventDefault();
-          const fd = new FormData(e.currentTarget);
+          // Pass the clicked button so name/value pairs such as intent=draft survive.
+          const submitter = (e.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
+          const fd = new FormData(e.currentTarget, submitter);
           startTransition(() => formAction(fd));
         }}
         className={className}

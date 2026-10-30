@@ -3,6 +3,7 @@ import { getObjectStream } from "@/lib/server/storage";
 import { PUBLIC_PURPOSES, type StoredPurpose } from "@/lib/server/files";
 import { getViewer } from "@/lib/server/member-auth";
 import { canSee, fieldVisibility, type Visibility } from "@/lib/server/profile";
+import { PUBLISHED_SQL, postVisibleSql } from "@/lib/server/posts";
 import { Readable } from "node:stream";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +13,9 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /**
  * GET /api/files/:id — streams a stored object from the private bucket.
  *
- * - news, site, gallery images                → anyone
+ * - news, site, gallery images, event covers → anyone
+ * - alumni-post images                       → the author, staff, or whoever
+ *                                               may read the published post
  * - profile photos                            → staff, the owner, or anyone the
  *                                               owner's photo visibility allows,
  *                                               and only while they are listed
@@ -24,7 +27,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   if (!UUID.test(id)) return new Response("Not found", { status: 404 });
 
   const [file] = await query<{
-    object_key: string; content_type: string; size_bytes: string; purpose: StoredPurpose | "attachment" | "gallery" | "nomination";
+    object_key: string; content_type: string; size_bytes: string; purpose: StoredPurpose;
     owner_alumni_id: string | null; is_news_attachment: boolean;
   }>(
     `SELECT f.object_key, f.content_type, f.size_bytes, f.purpose::text AS purpose, f.owner_alumni_id,
@@ -36,7 +39,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   if (!file) return new Response("Not found", { status: 404 });
 
   const viewer = await getViewer();
-  let allowed = PUBLIC_PURPOSES.includes(file.purpose as StoredPurpose) || file.purpose === "gallery" || file.is_news_attachment;
+  let allowed = PUBLIC_PURPOSES.includes(file.purpose) || file.is_news_attachment;
   let publicCache = allowed;
 
   if (!allowed && viewer.kind === "staff") allowed = true;
@@ -54,6 +57,21 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
         allowed = canSee(vis, viewer);
         publicCache = allowed && vis === "public";
       }
+    }
+  }
+
+  if (!allowed && file.purpose === "post_image") {
+    const own = (viewer.kind === "alumni" || viewer.kind === "student") && viewer.account.alumniId === file.owner_alumni_id;
+    if (own) allowed = true;
+    else {
+      const params: unknown[] = [id];
+      const [vis] = await query<{ visibility: string }>(
+        `SELECT p.visibility::text AS visibility FROM alumni_post p JOIN alumni au ON au.id = p.author_id
+         WHERE p.image_file_id = $1 AND ${PUBLISHED_SQL} AND ${postVisibleSql(viewer, params)} LIMIT 1`,
+        params,
+      );
+      allowed = Boolean(vis);
+      publicCache = vis?.visibility === "public";
     }
   }
 

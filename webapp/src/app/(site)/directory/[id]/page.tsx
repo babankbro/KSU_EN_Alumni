@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import PageHead from "@/components/PageHead";
 import { getDirectoryPerson } from "@/lib/server/directory";
 import { getViewer, isMember, viewerAccount } from "@/lib/server/member-auth";
+import { postsAboutPerson } from "@/lib/server/posts";
 import { hit, LIMITS } from "@/lib/server/rate-limit";
 import { query } from "@/lib/server/db";
 import { formatThaiDateOnly } from "@/lib/server/format-server";
@@ -34,20 +35,9 @@ export default async function DirectoryProfilePage({ params }: { params: Promise
     [actor, p.id],
   );
 
-  // FR-ANEWS-19 — this person's approved news, filtered by each post's visibility.
+  // FR-ANEWS-19 — posts by or tagging this person, each filtered by its own visibility.
+  const posts = await postsAboutPerson(p.id, viewer);
   const member = isMember(viewer);
-  const viewerCohort = viewer.kind === "alumni" ? viewer.account.admissionYear : null;
-  const posts = await query<{ id: number; title: string; type: string; published_at: Date }>(
-    `SELECT p.id, p.title, p.type::text, p.published_at FROM alumni_post p
-     WHERE p.author_id = $1 AND p.moderation_status = 'approved' AND NOT p.is_draft AND p.published_at IS NOT NULL
-       AND (p.visibility = 'public' OR ($2 AND p.visibility = 'members') OR ($2 AND p.visibility = 'cohort' AND $3::int = $4::int))
-     UNION
-     SELECT p.id, p.title, p.type::text, p.published_at FROM alumni_post p
-     JOIN alumni_post_tag t ON t.post_id = p.id AND t.alumni_id = $1 AND NOT t.declined
-     WHERE p.moderation_status = 'approved' AND NOT p.is_draft AND (p.visibility = 'public' OR $2)
-     ORDER BY published_at DESC LIMIT 10`,
-    [p.id, member, viewerCohort, p.admissionYear],
-  );
 
   const contact = [
     p.email ? { k: "อีเมล", v: <a href={`mailto:${p.email}`}>{p.email}</a> } : null,
@@ -112,12 +102,12 @@ export default async function DirectoryProfilePage({ params }: { params: Promise
 
           {posts.length ? (
             <section className="admin-card">
-              <h2>ข่าวของ{p.name.replace(/^(นาย|นางสาว|นาง)/, "")}</h2>
+              <h2>ข่าวที่เกี่ยวข้องกับ{p.name.replace(/^(นาย|นางสาว|นาง)/, "")}</h2>
               <ul className="list-plain">
                 {posts.map((x) => (
                   <li key={x.id}>
                     <Link href={`/alumni-news/${x.id}`}>{x.title}</Link>{" "}
-                    <span className="small muted">· {x.type} · {formatThaiDateOnly(x.published_at)}</span>
+                    <span className="small muted">· {x.type} · {formatThaiDateOnly(x.publishedAt)}</span>
                   </li>
                 ))}
               </ul>

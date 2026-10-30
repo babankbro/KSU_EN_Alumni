@@ -40,7 +40,7 @@ export default function NewsForm({ initial }: { initial: NewsFormValues }) {
 
   return (
     <form action={action} onSubmit={keepValues} className="admin-card" noValidate>
-      {initial.id ? <input type="hidden" name="id" value={initial.id} /> : null}
+      {initial.id ? <input type="hidden" name="recordId" value={initial.id} /> : null}
 
       {state.error ? <p className="flash flash-error" role="alert">{state.error}</p> : null}
 
