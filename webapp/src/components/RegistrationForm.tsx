@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PROGRAMS } from "@/lib/data";
 import {
   DEGREE_OPTIONS,
@@ -14,6 +14,7 @@ import {
   type RegistrationPath,
 } from "@/lib/registration";
 import type { DegreeLevel, Visibility } from "@/lib/types";
+import type { ProgramOption } from "@/app/api/programs/route";
 import PhotoDropzone from "./PhotoDropzone";
 
 const STEPS = [
@@ -23,17 +24,71 @@ const STEPS = [
   { title: "ยินยอมและตรวจสอบ", hint: "อ่านและยืนยันก่อนส่งใบสมัคร" },
 ];
 
+interface ProgramLevel {
+  level: string;
+  programs: ProgramOption[];
+}
+
+interface SubmitResult {
+  id: string;
+  status: "submitted" | "matched";
+  matched: boolean;
+}
+
+/**
+ * The taxonomy normally comes from /api/programs (PostgreSQL, with lineage).
+ * If the API is unreachable — e.g. a static preview with no database — the
+ * form falls back to the small built-in list so it still works end to end.
+ */
+function fallbackPrograms(): ProgramLevel[] {
+  return [
+    {
+      level: "วศ.บ.",
+      programs: PROGRAMS.map((p) => ({
+        code: p.id,
+        nameTh: p.nameTh,
+        nameEn: p.nameEn,
+        degreeLevel: "วศ.บ.",
+        studyPlan: "4ปี",
+        status: "active" as const,
+        currentNameTh: p.nameTh,
+        verified: false,
+      })),
+    },
+  ];
+}
+
 export default function RegistrationForm() {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [errors, setErrors] = useState<Errors>({});
-  const [submitted, setSubmitted] = useState(false);
+  const [programs, setPrograms] = useState<ProgramLevel[] | null>(null);
+  const [programsFromApi, setProgramsFromApi] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
+  const [result, setResult] = useState<SubmitResult | null>(null);
   const summaryRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/programs")
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((data: { levels: ProgramLevel[] }) => {
+        if (!cancelled) {
+          setPrograms(data.levels);
+          setProgramsFromApi(true);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setPrograms(fallbackPrograms());
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
-    // Clear the message for the field being corrected, so the form stops
-    // scolding the user while they are fixing it.
     setErrors((prev) => {
       if (!(key in prev)) return prev;
       const next = { ...prev };
@@ -42,12 +97,15 @@ export default function RegistrationForm() {
     });
   }
 
+  function focusSummary() {
+    requestAnimationFrame(() => summaryRef.current?.focus());
+  }
+
   function goNext() {
     const found = validateStep(step, form);
     setErrors(found);
     if (Object.keys(found).length > 0) {
-      // Move focus to the summary so screen-reader users hear what failed.
-      requestAnimationFrame(() => summaryRef.current?.focus());
+      focusSummary();
       return;
     }
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
@@ -55,21 +113,67 @@ export default function RegistrationForm() {
 
   function goBack() {
     setErrors({});
+    setServerError(null);
     setStep((s) => Math.max(s - 1, 0));
   }
 
-  function submit() {
+  async function submit() {
     const found = validateStep(step, form);
     setErrors(found);
     if (Object.keys(found).length > 0) {
-      requestAnimationFrame(() => summaryRef.current?.focus());
+      focusSummary();
       return;
     }
-    setSubmitted(true);
+
+    setSubmitting(true);
+    setServerError(null);
+
+    try {
+      // 1. Photo first, so the registration can reference the stored object.
+      let photoFileId: string | null = null;
+      if (form.photo) {
+        const fd = new FormData();
+        fd.append("file", form.photo.file);
+        fd.append("purpose", "profile_photo");
+        const up = await fetch("/api/upload", { method: "POST", body: fd });
+        const upBody = (await up.json().catch(() => ({}))) as { fileId?: string; error?: string };
+        if (!up.ok || !upBody.fileId) {
+          throw new Error(upBody.error ?? "อัปโหลดรูปไม่สำเร็จ");
+        }
+        photoFileId = upBody.fileId;
+      }
+
+      // 2. The application itself. The File never travels in JSON.
+      const { photo: _photo, ...rest } = form;
+      void _photo;
+      const res = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...rest, photoFileId }),
+      });
+      const body = (await res.json().catch(() => ({}))) as
+        | SubmitResult
+        | { error?: string; fields?: Errors };
+
+      if (res.status === 422 && "fields" in body && body.fields) {
+        setErrors(body.fields);
+        focusSummary();
+        return;
+      }
+      if (!res.ok || !("id" in body)) {
+        throw new Error(("error" in body && body.error) || "ส่งใบสมัครไม่สำเร็จ");
+      }
+      setResult(body);
+    } catch (err) {
+      setServerError(err instanceof Error ? err.message : "เกิดข้อผิดพลาดที่ไม่คาดคิด");
+      focusSummary();
+    } finally {
+      setSubmitting(false);
+    }
   }
 
-  if (submitted) {
-    return <SubmittedPanel form={form} />;
+  if (result) {
+    return <SubmittedPanel form={form} result={result} programs={programs ?? []} />;
   }
 
   const errorList = Object.entries(errors);
@@ -80,9 +184,7 @@ export default function RegistrationForm() {
         {STEPS.map((s, i) => (
           <li
             key={s.title}
-            className={
-              i === step ? "is-current" : i < step ? "is-done" : undefined
-            }
+            className={i === step ? "is-current" : i < step ? "is-done" : undefined}
             aria-current={i === step ? "step" : undefined}
           >
             <span className="step-num" aria-hidden="true">
@@ -101,41 +203,53 @@ export default function RegistrationForm() {
         noValidate
         onSubmit={(e) => {
           e.preventDefault();
-          if (step === STEPS.length - 1) submit();
+          if (submitting) return;
+          if (step === STEPS.length - 1) void submit();
           else goNext();
         }}
       >
-        {errorList.length > 0 ? (
-          <div
-            className="error-summary"
-            role="alert"
-            tabIndex={-1}
-            ref={summaryRef}
-          >
-            <strong>กรุณาตรวจสอบ {errorList.length} รายการต่อไปนี้</strong>
-            <ul>
-              {errorList.map(([key, message]) => (
-                <li key={key}>{message}</li>
-              ))}
-            </ul>
+        {errorList.length > 0 || serverError ? (
+          <div className="error-summary" role="alert" tabIndex={-1} ref={summaryRef}>
+            {serverError ? (
+              <strong>{serverError}</strong>
+            ) : (
+              <strong>กรุณาตรวจสอบ {errorList.length} รายการต่อไปนี้</strong>
+            )}
+            {errorList.length > 0 ? (
+              <ul>
+                {errorList.map(([key, message]) => (
+                  <li key={key}>{message}</li>
+                ))}
+              </ul>
+            ) : null}
           </div>
         ) : null}
 
         {step === 0 ? <StepIdentity form={form} set={set} errors={errors} /> : null}
-        {step === 1 ? <StepName form={form} set={set} errors={errors} /> : null}
+        {step === 1 ? (
+          <StepName
+            form={form}
+            set={set}
+            errors={errors}
+            programs={programs}
+            programsFromApi={programsFromApi}
+          />
+        ) : null}
         {step === 2 ? <StepContact form={form} set={set} errors={errors} /> : null}
-        {step === 3 ? <StepConsent form={form} set={set} errors={errors} /> : null}
+        {step === 3 ? (
+          <StepConsent form={form} set={set} errors={errors} programs={programs ?? []} />
+        ) : null}
 
         <div className="form-actions">
           {step > 0 ? (
-            <button type="button" className="btn btn-outline" onClick={goBack}>
+            <button type="button" className="btn btn-outline" onClick={goBack} disabled={submitting}>
               ย้อนกลับ
             </button>
           ) : (
             <span />
           )}
-          <button type="submit" className="btn btn-primary">
-            {step === STEPS.length - 1 ? "ส่งใบสมัคร" : "ถัดไป"}
+          <button type="submit" className="btn btn-primary" disabled={submitting} aria-busy={submitting}>
+            {submitting ? "กำลังส่ง…" : step === STEPS.length - 1 ? "ส่งใบสมัคร" : "ถัดไป"}
           </button>
         </div>
       </form>
@@ -143,7 +257,7 @@ export default function RegistrationForm() {
   );
 }
 
-/* ================= shared field helpers ================= */
+/* ================= shared field helper ================= */
 
 function Field({
   id,
@@ -170,7 +284,6 @@ function Field({
 
   return (
     <div className={`field${error ? " has-error" : ""}`}>
-      {/* §6 — the label always sits above the control, never inside it */}
       <label htmlFor={id}>
         {label}
         {required ? (
@@ -209,6 +322,23 @@ interface StepProps {
   errors: Errors;
 }
 
+function findProgram(programs: ProgramLevel[], code: string): ProgramOption | undefined {
+  for (const lvl of programs) {
+    const hit = lvl.programs.find((p) => p.code === code);
+    if (hit) return hit;
+  }
+  return undefined;
+}
+
+/** "ช่างยนต์ (ปัจจุบัน: เทคนิคยานยนต์)" for renamed rows, plain name otherwise. */
+function programLabel(p: ProgramOption): string {
+  if (p.status === "renamed" && p.currentNameTh !== p.nameTh) {
+    return `${p.nameTh} (ปัจจุบัน: ${p.currentNameTh})`;
+  }
+  if (p.status === "closed") return `${p.nameTh} (ปิดหลักสูตรแล้ว)`;
+  return p.nameTh;
+}
+
 /* ================= step 1 — identity ================= */
 
 function StepIdentity({ form, set, errors }: StepProps) {
@@ -231,10 +361,7 @@ function StepIdentity({ form, set, errors }: StepProps) {
             },
           ] as { value: RegistrationPath; title: string; body: string }[]
         ).map((opt) => (
-          <label
-            key={opt.value}
-            className={`choice-card${form.path === opt.value ? " is-selected" : ""}`}
-          >
+          <label key={opt.value} className={`choice-card${form.path === opt.value ? " is-selected" : ""}`}>
             <input
               type="radio"
               name="path"
@@ -296,12 +423,7 @@ function StepIdentity({ form, set, errors }: StepProps) {
           </div>
 
           {form.verifyMethod === "birthdate" ? (
-            <Field
-              id="birthDate"
-              label="วันเดือนปีเกิด"
-              required
-              error={errors.birthDate}
-            >
+            <Field id="birthDate" label="วันเดือนปีเกิด" required error={errors.birthDate}>
               {(p) => (
                 <input
                   {...p}
@@ -317,7 +439,7 @@ function StepIdentity({ form, set, errors }: StepProps) {
               label="เลขบัตรประชาชน 4 หลักท้าย"
               required
               error={errors.idLast4}
-              hint="ระบบเก็บเฉพาะ 4 หลักท้ายเพื่อใช้จับคู่ระเบียนเท่านั้น ไม่เก็บเลขบัตรเต็ม"
+              hint="ระบบเก็บเฉพาะ 4 หลักท้ายในรูปแบบเข้ารหัส เพื่อใช้จับคู่ระเบียนเท่านั้น"
             >
               {(p) => (
                 <input
@@ -336,37 +458,36 @@ function StepIdentity({ form, set, errors }: StepProps) {
       ) : (
         <p className="info-note">
           คุณเลือกกรอกข้อมูลเอง ขั้นถัดไปจะให้กรอกชื่อและข้อมูลการศึกษาทั้งหมด
-          เจ้าหน้าที่งานศิษย์เก่าสัมพันธ์จะตรวจสอบก่อนอนุมัติ
-          โดยทั่วไปใช้เวลาไม่เกิน 3 วันทำการ
+          เจ้าหน้าที่งานศิษย์เก่าสัมพันธ์จะตรวจสอบก่อนอนุมัติ โดยทั่วไปใช้เวลาไม่เกิน 3 วันทำการ
         </p>
       )}
     </fieldset>
   );
 }
 
-/* ================= step 2 — name ================= */
+/* ================= step 2 — name & programme ================= */
 
-function StepName({ form, set, errors }: StepProps) {
+function StepName({
+  form,
+  set,
+  errors,
+  programs,
+  programsFromApi,
+}: StepProps & { programs: ProgramLevel[] | null; programsFromApi: boolean }) {
   function addFormerName() {
     set("formerNames", [
       ...form.formerNames,
       { id: `fn-${Date.now()}`, firstNameTh: "", lastNameTh: "" },
     ]);
   }
-
   function updateFormerName(id: string, patch: Partial<{ firstNameTh: string; lastNameTh: string }>) {
-    set(
-      "formerNames",
-      form.formerNames.map((n) => (n.id === id ? { ...n, ...patch } : n)),
-    );
+    set("formerNames", form.formerNames.map((n) => (n.id === id ? { ...n, ...patch } : n)));
+  }
+  function removeFormerName(id: string) {
+    set("formerNames", form.formerNames.filter((n) => n.id !== id));
   }
 
-  function removeFormerName(id: string) {
-    set(
-      "formerNames",
-      form.formerNames.filter((n) => n.id !== id),
-    );
-  }
+  const selected = programs ? findProgram(programs, form.programId) : undefined;
 
   return (
     <fieldset className="form-section">
@@ -378,11 +499,7 @@ function StepName({ form, set, errors }: StepProps) {
       <div className="field-grid">
         <Field id="titleTh" label="คำนำหน้า" required>
           {(p) => (
-            <select
-              {...p}
-              value={form.titleTh}
-              onChange={(e) => set("titleTh", e.target.value)}
-            >
+            <select {...p} value={form.titleTh} onChange={(e) => set("titleTh", e.target.value)}>
               {TITLE_OPTIONS.map((t) => (
                 <option key={t} value={t}>
                   {t}
@@ -435,18 +552,9 @@ function StepName({ form, set, errors }: StepProps) {
           )}
         </Field>
 
-        <Field
-          id="nickname"
-          label="ชื่อเล่น"
-          hint="ช่วยให้เพื่อนร่วมรุ่นค้นหาคุณเจอง่ายขึ้นมาก"
-        >
+        <Field id="nickname" label="ชื่อเล่น" hint="ช่วยให้เพื่อนร่วมรุ่นค้นหาคุณเจอง่ายขึ้นมาก">
           {(p) => (
-            <input
-              {...p}
-              type="text"
-              value={form.nickname}
-              onChange={(e) => set("nickname", e.target.value)}
-            />
+            <input {...p} type="text" value={form.nickname} onChange={(e) => set("nickname", e.target.value)} />
           )}
         </Field>
       </div>
@@ -455,30 +563,19 @@ function StepName({ form, set, errors }: StepProps) {
       <div className="field-grid">
         <Field id="firstNameEn" label="First name" error={errors.firstNameEn}>
           {(p) => (
-            <input
-              {...p}
-              type="text"
-              value={form.firstNameEn}
-              onChange={(e) => set("firstNameEn", e.target.value)}
-            />
+            <input {...p} type="text" value={form.firstNameEn} onChange={(e) => set("firstNameEn", e.target.value)} />
           )}
         </Field>
         <Field id="lastNameEn" label="Last name" error={errors.lastNameEn}>
           {(p) => (
-            <input
-              {...p}
-              type="text"
-              value={form.lastNameEn}
-              onChange={(e) => set("lastNameEn", e.target.value)}
-            />
+            <input {...p} type="text" value={form.lastNameEn} onChange={(e) => set("lastNameEn", e.target.value)} />
           )}
         </Field>
       </div>
 
       <h3 className="form-subhead">ชื่อ-นามสกุลเดิม</h3>
       <p className="field-hint">
-        ถ้าคุณเคยเปลี่ยนชื่อหรือนามสกุล กรอกชื่อเดิมไว้ด้วย
-        เพื่อให้เพื่อนร่วมรุ่นที่จำชื่อเดิมได้ยังค้นหาคุณเจอ
+        ถ้าคุณเคยเปลี่ยนชื่อหรือนามสกุล กรอกชื่อเดิมไว้ด้วย เพื่อให้เพื่อนร่วมรุ่นที่จำชื่อเดิมได้ยังค้นหาคุณเจอ
       </p>
 
       {form.formerNames.map((n, i) => (
@@ -503,13 +600,8 @@ function StepName({ form, set, errors }: StepProps) {
               />
             )}
           </Field>
-          <button
-            type="button"
-            className="btn btn-outline btn-sm"
-            onClick={() => removeFormerName(n.id)}
-          >
-            ลบ
-            <span className="sr-only"> ชื่อเดิมรายการที่ {i + 1}</span>
+          <button type="button" className="btn btn-outline btn-sm" onClick={() => removeFormerName(n.id)}>
+            ลบ<span className="sr-only"> ชื่อเดิมรายการที่ {i + 1}</span>
           </button>
           {errors[`formerName-${i}`] ? (
             <p className="field-error row-error">{errors[`formerName-${i}`]}</p>
@@ -542,12 +634,7 @@ function StepName({ form, set, errors }: StepProps) {
           )}
         </Field>
 
-        <Field
-          id="graduationYear"
-          label="ปีที่สำเร็จการศึกษา (พ.ศ.)"
-          required
-          error={errors.graduationYear}
-        >
+        <Field id="graduationYear" label="ปีที่สำเร็จการศึกษา (พ.ศ.)" required error={errors.graduationYear}>
           {(p) => (
             <input
               {...p}
@@ -576,23 +663,47 @@ function StepName({ form, set, errors }: StepProps) {
           )}
         </Field>
 
-        <Field id="programId" label="สาขาวิชา" required error={errors.programId}>
+        <Field
+          id="programId"
+          label="สาขาวิชา"
+          required
+          error={errors.programId}
+          hint={
+            programs === null
+              ? "กำลังโหลดรายการสาขา…"
+              : programsFromApi
+                ? "เลือกชื่อสาขาตามที่ใช้ตอนคุณเรียน — สาขาที่เปลี่ยนชื่อแล้วจะแสดงชื่อปัจจุบันกำกับไว้"
+                : "โหลดรายการสาขาจากฐานข้อมูลไม่ได้ แสดงรายการย่อแทน"
+          }
+        >
           {(p) => (
             <select
               {...p}
               value={form.programId}
               onChange={(e) => set("programId", e.target.value)}
+              disabled={programs === null}
             >
               <option value="">— เลือกสาขาวิชา —</option>
-              {PROGRAMS.map((prog) => (
-                <option key={prog.id} value={prog.id}>
-                  {prog.nameTh}
-                </option>
+              {(programs ?? []).map((lvl) => (
+                <optgroup key={lvl.level} label={lvl.level}>
+                  {lvl.programs.map((prog) => (
+                    <option key={prog.code} value={prog.code}>
+                      {programLabel(prog)}
+                      {prog.studyPlan !== "4ปี" && prog.studyPlan !== "2ปี" ? ` · ${prog.studyPlan}` : ""}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </select>
           )}
         </Field>
       </div>
+
+      {selected && !selected.verified ? (
+        <p className="field-hint" style={{ marginTop: 8 }}>
+          ℹ️ ชื่อสาขานี้ยังรอการยืนยันกับงานทะเบียน หากไม่ตรงกับเอกสารของคุณ เจ้าหน้าที่จะปรับให้ตอนตรวจสอบ
+        </p>
+      ) : null}
 
       {form.firstNameTh.trim() || form.lastNameTh.trim() ? (
         <p className="name-preview">
@@ -611,13 +722,7 @@ function StepContact({ form, set, errors }: StepProps) {
       <legend>ขั้นที่ 3 — ข้อมูลติดต่อและความเป็นส่วนตัว</legend>
 
       <div className="field-grid">
-        <Field
-          id="email"
-          label="อีเมล"
-          required
-          error={errors.email}
-          hint="ใช้สำหรับยืนยันการสมัครและกู้คืนบัญชี"
-        >
+        <Field id="email" label="อีเมล" required error={errors.email} hint="ใช้สำหรับยืนยันการสมัครและกู้คืนบัญชี">
           {(p) => (
             <input
               {...p}
@@ -643,24 +748,12 @@ function StepContact({ form, set, errors }: StepProps) {
         </Field>
 
         <Field id="lineId" label="LINE ID">
-          {(p) => (
-            <input
-              {...p}
-              type="text"
-              value={form.lineId}
-              onChange={(e) => set("lineId", e.target.value)}
-            />
-          )}
+          {(p) => <input {...p} type="text" value={form.lineId} onChange={(e) => set("lineId", e.target.value)} />}
         </Field>
 
         <Field id="province" label="จังหวัดที่อยู่ปัจจุบัน">
           {(p) => (
-            <input
-              {...p}
-              type="text"
-              value={form.province}
-              onChange={(e) => set("province", e.target.value)}
-            />
+            <input {...p} type="text" value={form.province} onChange={(e) => set("province", e.target.value)} />
           )}
         </Field>
       </div>
@@ -668,10 +761,7 @@ function StepContact({ form, set, errors }: StepProps) {
       <h3 className="form-subhead">ใครเห็นข้อมูลติดต่อของคุณได้บ้าง</h3>
       <div className="choice-cards" role="radiogroup" aria-label="ระดับความเป็นส่วนตัว">
         {VISIBILITY_OPTIONS.map((opt) => (
-          <label
-            key={opt.value}
-            className={`choice-card${form.visibility === opt.value ? " is-selected" : ""}`}
-          >
+          <label key={opt.value} className={`choice-card${form.visibility === opt.value ? " is-selected" : ""}`}>
             <input
               type="radio"
               name="visibility"
@@ -688,17 +778,16 @@ function StepContact({ form, set, errors }: StepProps) {
       </div>
 
       <p className="info-note">
-        คุณเปลี่ยนการตั้งค่านี้ได้ตลอดเวลาจากหน้าโปรไฟล์
-        และตั้งค่าแยกรายฟิลด์ได้หลังจากยืนยันตัวตนแล้ว
+        คุณเปลี่ยนการตั้งค่านี้ได้ตลอดเวลาจากหน้าโปรไฟล์ และตั้งค่าแยกรายฟิลด์ได้หลังจากยืนยันตัวตนแล้ว
       </p>
     </fieldset>
   );
 }
 
-/* ================= step 4 — consent ================= */
+/* ================= step 4 — consent & review ================= */
 
-function StepConsent({ form, set, errors }: StepProps) {
-  const program = PROGRAMS.find((p) => p.id === form.programId);
+function StepConsent({ form, set, errors, programs }: StepProps & { programs: ProgramLevel[] }) {
+  const program = findProgram(programs, form.programId);
 
   return (
     <fieldset className="form-section">
@@ -733,7 +822,7 @@ function StepConsent({ form, set, errors }: StepProps) {
           <div>
             <dt>รุ่น / สาขา</dt>
             <dd>
-              {form.admissionYear || "—"} · {program?.nameTh ?? "—"} ({form.degreeLevel})
+              {form.admissionYear || "—"} · {program ? `${program.degreeLevel} ${programLabel(program)}` : "—"}
             </dd>
           </div>
           <div>
@@ -746,9 +835,7 @@ function StepConsent({ form, set, errors }: StepProps) {
           </div>
           <div>
             <dt>ความเป็นส่วนตัว</dt>
-            <dd>
-              {VISIBILITY_OPTIONS.find((v) => v.value === form.visibility)?.label}
-            </dd>
+            <dd>{VISIBILITY_OPTIONS.find((v) => v.value === form.visibility)?.label}</dd>
           </div>
         </dl>
       </div>
@@ -769,9 +856,8 @@ function StepConsent({ form, set, errors }: StepProps) {
               ยินยอมให้จัดเก็บและใช้ข้อมูล <span className="required">*</span>
             </strong>
             <span className="choice-body">
-              ข้าพเจ้ายินยอมให้คณะวิศวกรรมศาสตร์ มหาวิทยาลัยกาฬสินธุ์
-              จัดเก็บและใช้ข้อมูลข้างต้นเพื่อการติดต่อ การจัดกิจกรรมศิษย์เก่า
-              และการรายงานประกันคุณภาพการศึกษา
+              ข้าพเจ้ายินยอมให้คณะวิศวกรรมศาสตร์และเทคโนโลยีอุตสาหกรรม มหาวิทยาลัยกาฬสินธุ์
+              จัดเก็บและใช้ข้อมูลข้างต้นเพื่อการติดต่อ การจัดกิจกรรมศิษย์เก่า และการรายงานประกันคุณภาพการศึกษา
             </span>
           </span>
         </label>
@@ -792,8 +878,7 @@ function StepConsent({ form, set, errors }: StepProps) {
           <span>
             <strong>ยินยอมให้แสดงชื่อในทำเนียบศิษย์เก่า</strong>
             <span className="choice-body">
-              หากไม่ยินยอม ระเบียนของคุณจะไม่ปรากฏในผลการค้นหา
-              แต่ยังใช้สมัครสมาชิกและรับข่าวสารได้ตามปกติ
+              หากไม่ยินยอม ระเบียนของคุณจะไม่ปรากฏในผลการค้นหา แต่ยังใช้สมัครสมาชิกและรับข่าวสารได้ตามปกติ
             </span>
           </span>
         </label>
@@ -808,17 +893,14 @@ function StepConsent({ form, set, errors }: StepProps) {
           />
           <span>
             <strong>ยินยอมรับข่าวสารและกิจกรรม</strong>
-            <span className="choice-body">
-              รับข่าวผ่านอีเมลหรือ LINE ยกเลิกได้ทุกเมื่อ
-            </span>
+            <span className="choice-body">รับข่าวผ่านอีเมลหรือ LINE ยกเลิกได้ทุกเมื่อ</span>
           </span>
         </label>
       </div>
 
       <p className="info-note">
-        คุณมีสิทธิขอสำเนาข้อมูล แก้ไขให้ถูกต้อง ถอนความยินยอม
-        หรือขอให้ลบข้อมูลออกจากระบบได้ทุกเมื่อ
-        โดยติดต่องานศิษย์เก่าสัมพันธ์ คณะวิศวกรรมศาสตร์
+        คุณมีสิทธิขอสำเนาข้อมูล แก้ไขให้ถูกต้อง ถอนความยินยอม หรือขอให้ลบข้อมูลออกจากระบบได้ทุกเมื่อ
+        โดยติดต่องานศิษย์เก่าสัมพันธ์ คณะวิศวกรรมศาสตร์และเทคโนโลยีอุตสาหกรรม
       </p>
     </fieldset>
   );
@@ -826,8 +908,27 @@ function StepConsent({ form, set, errors }: StepProps) {
 
 /* ================= submitted ================= */
 
-function SubmittedPanel({ form }: { form: FormState }) {
-  const claiming = form.path === "claim";
+function SubmittedPanel({
+  form,
+  result,
+  programs,
+}: {
+  form: FormState;
+  result: SubmitResult;
+  programs: ProgramLevel[];
+}) {
+  const program = findProgram(programs, form.programId);
+
+  let message: string;
+  if (form.path === "claim" && result.matched) {
+    message =
+      "ระบบจับคู่ข้อมูลของคุณกับระเบียนจากงานทะเบียนได้แล้ว เจ้าหน้าที่จะยืนยันและเปิดใช้โปรไฟล์ภายใน 1 วันทำการ";
+  } else if (form.path === "claim") {
+    message =
+      "ยังไม่พบระเบียนที่ตรงกับรหัสนักศึกษาและข้อมูลยืนยัน ใบสมัครของคุณถูกส่งให้เจ้าหน้าที่ตรวจสอบด้วยตนเอง โดยทั่วไปใช้เวลาไม่เกิน 3 วันทำการ";
+  } else {
+    message = "ใบสมัครของคุณเข้าคิวรอเจ้าหน้าที่ตรวจสอบ โดยทั่วไปใช้เวลาไม่เกิน 3 วันทำการ";
+  }
 
   return (
     <div className="submitted-panel" role="status">
@@ -836,14 +937,14 @@ function SubmittedPanel({ form }: { form: FormState }) {
       </span>
       <h2>ส่งใบสมัครเรียบร้อย</h2>
       <p>
-        ขอบคุณ {previewName(form)}{" "}
-        {claiming
-          ? "ระบบกำลังจับคู่ข้อมูลกับระเบียนในงานทะเบียน หากตรงกันคุณจะได้รับอีเมลยืนยันภายใน 1 วันทำการ"
-          : "ใบสมัครของคุณเข้าคิวรอเจ้าหน้าที่ตรวจสอบ โดยทั่วไปใช้เวลาไม่เกิน 3 วันทำการ"}
+        ขอบคุณ {previewName(form)}
+        {program ? ` (${program.degreeLevel} ${program.nameTh})` : ""} — {message}
+      </p>
+      <p className="field-hint">
+        หมายเลขอ้างอิง <code>{result.id}</code>
       </p>
       <p className="info-note">
-        หน้านี้เป็นเว็บไซต์ร่าง ข้อมูลที่กรอก<strong>ไม่ได้ถูกส่งหรือจัดเก็บที่ใด</strong>{" "}
-        และรูปที่แนบอยู่ในเบราว์เซอร์ของคุณเท่านั้น
+        หน้านี้เป็นเว็บไซต์ร่าง ข้อมูลถูกบันทึกลงฐานข้อมูลทดสอบและรูปถูกเก็บใน MinIO ภายในเครื่องของคุณเท่านั้น
       </p>
     </div>
   );

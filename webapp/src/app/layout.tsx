@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Noto_Sans_Thai } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import DraftBanner from "@/components/DraftBanner";
 import TopBar from "@/components/TopBar";
@@ -7,16 +7,33 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 
 // §3 Typography — Noto Sans Thai for Thai text, Inter for Latin and numerals.
-const notoThai = Noto_Sans_Thai({
-  subsets: ["thai", "latin"],
-  weight: ["400", "500", "600", "700"],
+//
+// Self-hosted from @fontsource rather than next/font/google: the Google
+// variant downloads the files during `next build`, which made Docker builds
+// fail whenever fonts.googleapis.com was unreachable. University build hosts
+// often sit behind a filtering proxy, so the build must not need the internet.
+//
+// Noto Sans Thai carries only the Thai subset; Latin glyphs fall through to
+// Inter, which is next in the font stack in globals.css.
+// Paths must be plain string literals — next/font rejects computed values.
+const notoThai = localFont({
+  src: [
+    { path: "../../node_modules/@fontsource/noto-sans-thai/files/noto-sans-thai-thai-400-normal.woff2", weight: "400" },
+    { path: "../../node_modules/@fontsource/noto-sans-thai/files/noto-sans-thai-thai-500-normal.woff2", weight: "500" },
+    { path: "../../node_modules/@fontsource/noto-sans-thai/files/noto-sans-thai-thai-600-normal.woff2", weight: "600" },
+    { path: "../../node_modules/@fontsource/noto-sans-thai/files/noto-sans-thai-thai-700-normal.woff2", weight: "700" },
+  ],
   variable: "--font-noto-thai",
   display: "swap",
 });
 
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+const inter = localFont({
+  src: [
+    { path: "../../node_modules/@fontsource/inter/files/inter-latin-400-normal.woff2", weight: "400" },
+    { path: "../../node_modules/@fontsource/inter/files/inter-latin-500-normal.woff2", weight: "500" },
+    { path: "../../node_modules/@fontsource/inter/files/inter-latin-600-normal.woff2", weight: "600" },
+    { path: "../../node_modules/@fontsource/inter/files/inter-latin-700-normal.woff2", weight: "700" },
+  ],
   variable: "--font-inter",
   display: "swap",
 });

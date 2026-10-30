@@ -50,6 +50,7 @@ export default function PhotoDropzone({
     if (photo) URL.revokeObjectURL(photo.previewUrl);
 
     onChange({
+      file,
       fileName: file.name,
       sizeBytes: file.size,
       type: file.type,

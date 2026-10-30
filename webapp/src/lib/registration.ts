@@ -25,6 +25,8 @@ export interface FormerName {
  * to avoid leaking the blob.
  */
 export interface PhotoState {
+  /** The picked File, kept so it can be uploaded on submit. */
+  file: File;
   fileName: string;
   sizeBytes: number;
   type: string;
