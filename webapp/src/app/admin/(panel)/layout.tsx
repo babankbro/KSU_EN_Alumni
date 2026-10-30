@@ -29,6 +29,12 @@ export default async function AdminPanelLayout({ children }: { children: React.R
       : []),
     { href: "/admin/news", label: "ข่าวประชาสัมพันธ์", icon: "📰" },
     ...(role === "admin" || role === "editor" ? [{ href: "/admin/events", label: "กิจกรรม", icon: "📅" }] : []),
+    ...(role === "admin" || role === "faculty"
+      ? [
+          { href: "/admin/awards", label: "ศิษย์เก่าดีเด่น", icon: "🏅" },
+          { href: "/admin/surveys", label: "แบบสำรวจ", icon: "📊" },
+        ]
+      : []),
     { href: "/admin/content", label: "ข้อมูลและรูปภาพเว็บ", icon: "🖼" },
   ];
 
