@@ -14,7 +14,7 @@ export default async function AdminPanelLayout({ children }: { children: React.R
   const items = [
     { href: "/admin", label: "ภาพรวม", icon: "▦" },
     // Member data is personal data: admins only (FR-ADM-18).
-    ...(session.role === "admin"
+    ...(session.role === "admin" || session.role === "faculty"
       ? [{ href: "/admin/members", label: "สมาชิก", icon: "👥", count: Number(pending?.n ?? 0) }]
       : []),
     { href: "/admin/news", label: "ข่าวประชาสัมพันธ์", icon: "📰" },

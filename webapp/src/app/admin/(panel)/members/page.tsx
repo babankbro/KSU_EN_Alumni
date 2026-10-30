@@ -26,7 +26,7 @@ function qs(base: SP, patch: Partial<SP>): string {
 }
 
 export default async function MembersPage({ searchParams }: { searchParams: Promise<SP> }) {
-  await requireAdmin("admin");
+  await requireAdmin(["admin", "faculty"]);
   const sp = await searchParams;
 
   const status = STATUSES.includes(sp.status as ClaimStatus) ? (sp.status as ClaimStatus) : "";
@@ -106,6 +106,9 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
         {q || status || level ? (
           <Link href="/admin/members" className="btn btn-outline">ล้างตัวกรอง</Link>
         ) : null}
+        <a href={`/admin/members/export${qs(current, { page: "" })}`} className="btn btn-outline">
+          ⬇ ส่งออก CSV
+        </a>
       </form>
 
       <p className="small muted">

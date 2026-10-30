@@ -24,7 +24,12 @@ const MAX_FAILURES = 5; // per email
 const MAX_FAILURES_PER_IP = 30;
 const FAILURE_WINDOW_MIN = 15;
 
-export type AdminRole = "admin" | "editor";
+/**
+ * admin   — everything, including member personal data (AD in the SRS)
+ * faculty — QA and awards: member data read-only, surveys, nominations (F)
+ * editor  — news and site content only, never member data (M)
+ */
+export type AdminRole = "admin" | "editor" | "faculty";
 
 export interface AdminSession {
   id: string;
@@ -165,10 +170,11 @@ export async function getAdminSession(): Promise<AdminSession | null> {
 }
 
 /** Use at the top of every admin page and server action. */
-export async function requireAdmin(role?: AdminRole): Promise<AdminSession> {
+export async function requireAdmin(roles?: AdminRole | AdminRole[]): Promise<AdminSession> {
   const session = await getAdminSession();
   if (!session) redirect("/admin/login");
-  if (role === "admin" && session.role !== "admin") redirect("/admin?denied=1");
+  const allowed = roles === undefined ? null : Array.isArray(roles) ? roles : [roles];
+  if (allowed && !allowed.includes(session.role)) redirect("/admin?denied=1");
   return session;
 }
 

@@ -29,7 +29,8 @@ type Props = {
 };
 
 export default async function MemberDetailPage({ params, searchParams }: Props) {
-  const session = await requireAdmin("admin");
+  const session = await requireAdmin(["admin", "faculty"]);
+  const canReview = session.role === "admin";
   const { id } = await params;
   const { reviewed, stale } = await searchParams;
 
@@ -84,7 +85,7 @@ export default async function MemberDetailPage({ params, searchParams }: Props) 
         </div>
       </div>
 
-      {m.status === "pending" ? (
+      {m.status === "pending" && canReview ? (
         <section className="admin-card review-box" aria-labelledby="review-h">
           <h2 id="review-h">ใบสมัครนี้รอการตรวจสอบ</h2>
           <p className="small" style={{ margin: 0 }}>

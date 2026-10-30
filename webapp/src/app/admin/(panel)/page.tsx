@@ -30,7 +30,7 @@ export default async function AdminDashboard({
 }) {
   const session = await requireAdmin();
   const { denied } = await searchParams;
-  const isAdmin = session.role === "admin";
+  const isAdmin = session.role === "admin" || session.role === "faculty"; // may see member figures
 
   const [stats, newsCounts, activity] = await Promise.all([
     isAdmin ? getMemberStats() : Promise.resolve(null),
