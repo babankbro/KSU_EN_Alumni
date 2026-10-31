@@ -13,6 +13,7 @@ import {
   startMemberSession,
 } from "@/lib/server/member-auth";
 import { enqueue } from "@/lib/server/notify";
+import { login as staffLogin } from "@/lib/server/auth";
 
 import type { FormState } from "@/lib/form-state";
 
@@ -29,8 +30,22 @@ export async function memberLoginAction(_p: FormState, fd: FormData): Promise<Fo
   const password = raw(fd, "password");
   if (!email || !password) return { error: "กรุณากรอกอีเมลและรหัสผ่าน" };
   const r = await memberLogin(email, password);
-  if (!r.ok) return { error: r.error };
-  redirect(safeNext(str(fd, "next")));
+  if (r.ok) redirect(safeNext(str(fd, "next")));
+
+  // Staff who use this page instead of /admin/login: a staff email without a
+  // member account goes through the staff login (its own lockout and audit).
+  const [staff] = await query<{ n: string }>(
+    `SELECT count(*) AS n FROM admin_user u
+     WHERE lower(u.email) = lower($1) AND u.is_active
+       AND NOT EXISTS (SELECT 1 FROM account a WHERE lower(a.email) = lower($1))`,
+    [email],
+  );
+  if (Number(staff?.n ?? 0) > 0) {
+    const s = await staffLogin(email, password);
+    if (s.ok) redirect("/admin");
+    return { error: s.error };
+  }
+  return { error: r.error };
 }
 
 export async function memberLogoutAction(): Promise<void> {

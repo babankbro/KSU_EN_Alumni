@@ -1,4 +1,3 @@
-import DraftBanner from "@/components/DraftBanner";
 import TopBar from "@/components/TopBar";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
@@ -25,7 +24,6 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
 
   return (
     <>
-      <DraftBanner />
       <TopBar settings={settings} />
       <SiteHeader member={member} />
       <main id="main">{children}</main>
