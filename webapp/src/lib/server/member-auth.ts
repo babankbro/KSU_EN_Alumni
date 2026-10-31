@@ -155,9 +155,22 @@ export async function memberLogin(email: string, password: string): Promise<{ ok
 
 /* ---------------- account creation (used by registration and student sign-up) ---------------- */
 
+/**
+ * Where an email is already in use: on an account, or only on an alumni
+ * contact record — applications sent before member accounts existed have
+ * an email but no account. Both are unique, so either blocks a new signup.
+ */
+export async function emailInUse(email: string): Promise<"account" | "contact" | null> {
+  const [r] = await query<{ account: boolean; contact: boolean }>(
+    `SELECT EXISTS (SELECT 1 FROM account WHERE lower(email) = lower($1)) AS account,
+            EXISTS (SELECT 1 FROM alumni_contact WHERE lower(email) = lower($1)) AS contact`,
+    [email.trim()],
+  );
+  return r?.account ? "account" : r?.contact ? "contact" : null;
+}
+
 export async function emailTaken(email: string): Promise<boolean> {
-  const [r] = await query<{ n: string }>(`SELECT count(*) AS n FROM account WHERE lower(email) = lower($1)`, [email.trim()]);
-  return Number(r?.n ?? 0) > 0;
+  return (await emailInUse(email)) !== null;
 }
 
 /* ---------------- password reset ---------------- */
@@ -165,8 +178,23 @@ export async function emailTaken(email: string): Promise<boolean> {
 export async function createResetToken(email: string): Promise<{ accountId: string; token: string } | null> {
   const key = email.trim().toLowerCase();
   if (await hit(LIMITS.passwordReset, key)) return null;
-  const [acc] = await query<{ id: string }>(`SELECT id FROM account WHERE lower(email) = $1 AND is_active`, [key]);
-  if (!acc) return null;
+  let [acc] = await query<{ id: string }>(`SELECT id FROM account WHERE lower(email) = $1 AND is_active`, [key]);
+  if (!acc) {
+    // An application sent before accounts existed: create its account now.
+    // Only the owner of the mailbox can use the link, which proves the email.
+    [acc] = await query<{ id: string }>(
+      `INSERT INTO account (email, role, alumni_id, display_name)
+       SELECT c.email, 'alumni', a.id, a.first_name_th || ' ' || a.last_name_th
+       FROM alumni_contact c JOIN alumni a ON a.id = c.alumni_id
+       WHERE lower(c.email) = $1 AND a.anonymized_at IS NULL AND a.claim_status IN ('pending', 'verified')
+         AND NOT EXISTS (SELECT 1 FROM account x WHERE x.alumni_id = a.id OR lower(x.email) = $1)
+       LIMIT 1
+       ON CONFLICT DO NOTHING
+       RETURNING id`,
+      [key],
+    );
+    if (!acc) return null;
+  }
   const { token, hash } = newToken();
   await query(
     `INSERT INTO account_token (token_hash, account_id, purpose, expires_at)

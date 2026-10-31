@@ -3,7 +3,7 @@ import type { PoolClient } from "pg";
 import { getPool } from "@/lib/server/db";
 import { clientIpFrom } from "@/lib/server/client-ip";
 import { hit, isLimited, recordHit, LIMITS } from "@/lib/server/rate-limit";
-import { emailTaken, startMemberSession } from "@/lib/server/member-auth";
+import { emailInUse, startMemberSession } from "@/lib/server/member-auth";
 import {
   emptyForm,
   validateStep1,
@@ -65,12 +65,8 @@ export async function POST(req: Request) {
     }
   }
 
-  if (await emailTaken(form.email)) {
-    return NextResponse.json(
-      { error: "อีเมลนี้มีบัญชีอยู่แล้ว", fields: { email: "อีเมลนี้มีบัญชีอยู่แล้ว — เข้าสู่ระบบหรือใช้ “ลืมรหัสผ่าน”" } },
-      { status: 409 },
-    );
-  }
+  const inUse = await emailInUse(form.email);
+  if (inUse) return emailConflict(inUse);
 
   const photoFileId =
     typeof body.photoFileId === "string" && body.photoFileId.trim() ? body.photoFileId.trim() : null;
@@ -232,6 +228,11 @@ export async function POST(req: Request) {
     await client.query("COMMIT");
   } catch (err) {
     await client.query("ROLLBACK").catch(() => undefined);
+    // Two submissions with the same email at the same moment: the second loses the race.
+    const constraint = (err as { code?: string; constraint?: string }).code === "23505" ? (err as { constraint?: string }).constraint : undefined;
+    if (constraint === "alumni_contact_email_idx" || constraint === "account_email_idx") {
+      return emailConflict(constraint === "account_email_idx" ? "account" : "contact");
+    }
     console.error("[api/register]", err);
     return NextResponse.json({ error: "บันทึกใบสมัครไม่สำเร็จ" }, { status: 503 });
   } finally {
@@ -264,4 +265,12 @@ async function upsertContact(client: PoolClient, alumniId: string, form: Registr
 function completeness(f: RegistrationForm): number {
   const checks = [f.firstNameEn.trim(), f.lastNameEn.trim(), f.nickname.trim(), f.phone.trim(), f.lineId.trim(), f.province.trim()];
   return Math.min(100, 40 + checks.filter(Boolean).length * 10);
+}
+
+function emailConflict(where: "account" | "contact") {
+  const msg =
+    where === "account"
+      ? "อีเมลนี้มีบัญชีอยู่แล้ว — เข้าสู่ระบบหรือใช้ “ลืมรหัสผ่าน”"
+      : "อีเมลนี้เคยใช้ส่งใบสมัครแล้ว — ใช้ “ลืมรหัสผ่าน” ที่หน้าเข้าสู่ระบบเพื่อตั้งรหัสผ่านให้ใบสมัครเดิม หรือใช้อีเมลอื่น";
+  return NextResponse.json({ error: msg, fields: { email: msg } }, { status: 409 });
 }
