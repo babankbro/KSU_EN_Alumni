@@ -1,5 +1,7 @@
 # KSU Engineering Alumni — Web Application (draft)
 
+คู่มือ: [ติดตั้ง](docs/INSTALL.md) · [ผู้ดูแล](docs/ADMIN-GUIDE.md) · [ผู้ใช้](docs/USER-GUIDE.md)
+
 ระบบสารสนเทศศิษย์เก่า คณะวิศวกรรมศาสตร์และเทคโนโลยีอุตสาหกรรม มหาวิทยาลัยกาฬสินธุ์
 
 > ⚠️ ข้อมูลศิษย์เก่าใน `db/003_seed_sample.sql` เป็น **บุคคลสมมติทั้งหมด** — ลบออกก่อนใช้งานจริง
@@ -120,9 +122,9 @@ docker compose start web cron
 
 กู้ไฟล์คืนเข้า MinIO: `docker exec ksu-alumni-backup-files mc mirror /backups/files/alumni-files src/alumni-files`
 
-## วัดความเร็วทำเนียบ (NFR-PERF-02)
+## วัดความเร็ว (NFR-PERF-02/03)
 
-`scripts/perf-seed.sql` สร้างศิษย์เก่าสมมติ 20,000 คน — **รันกับฐานข้อมูลสำเนาเท่านั้น** แล้วใช้ `scripts/perf-directory.sh` วัดเวลาตอบของหน้าทำเนียบผ่าน HTTP คำสั่งใช้งานอยู่ในหัวของทั้งสองไฟล์
+`scripts/perf-seed.sql` สร้างศิษย์เก่าสมมติ 20,000 คน — **รันกับฐานข้อมูลสำเนาเท่านั้น** แล้วใช้ `scripts/perf-directory.sh` วัดเวลาตอบของหน้าทำเนียบ และ `scripts/perf-sessions.sql` + `scripts/load-test.mjs` จำลองผู้ใช้พร้อมกัน คำสั่งใช้งานอยู่ในหัวของทั้งสองไฟล์
 
 ## รันแบบพัฒนา (ไม่ build image)
 

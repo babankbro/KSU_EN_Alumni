@@ -11,11 +11,10 @@ import PostCard from "@/components/PostCard";
 import { getSettings, getSiteImages, listPublishedNews } from "@/lib/server/content";
 import { getViewer, viewerAccount } from "@/lib/server/member-auth";
 import { listAwardees } from "@/lib/server/awards";
-import { parseDirFilter, searchDirectory } from "@/lib/server/directory";
+import { getDirectoryOptions, parseDirFilter, searchDirectory } from "@/lib/server/directory";
 import { canInteract, listFeed } from "@/lib/server/posts";
 import { listUpcomingEvents } from "@/lib/server/events";
 import { listJobs, parseJobFilter } from "@/lib/server/jobs";
-import { query } from "@/lib/server/db";
 
 /** Each home section degrades to empty instead of failing the whole page. */
 async function safe<T>(p: Promise<T>, fallback: T, what: string): Promise<T> {
@@ -40,10 +39,7 @@ export default async function HomePage() {
     safe(listUpcomingEvents(4), [], "events"),
     safe(listJobs(parseJobFilter({})).then((r) => r.jobs.slice(0, 3)), [], "jobs"),
     safe(
-      query<{ kind: string; value: string; label: string }>(
-        `SELECT DISTINCT 'cohort' AS kind, admission_year::text AS value, admission_year::text AS label FROM directory_public
-         UNION SELECT DISTINCT 'program', program_current_id::text, degree_level::text || ' ' || program_current_name_th FROM directory_public`,
-      ),
+      getDirectoryOptions(),
       [],
       "hero options",
     ),

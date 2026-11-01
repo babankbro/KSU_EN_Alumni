@@ -1,5 +1,6 @@
 import "server-only";
 import { query } from "./db";
+import { cached } from "./memo";
 import { fileUrl } from "./files";
 import { canSee, fieldVisibility, type Visibility } from "./profile";
 import type { Viewer } from "./member-auth";
@@ -51,16 +52,18 @@ export function parseDirFilter(sp: Record<string, string | string[] | undefined>
  * per request against the base tables (trigram-indexed); every directory
  * query then filters by these ids instead of re-scoring each row of the
  * directory view — that took over 2 s at 20,000 records (NFR-PERF-02).
+ * `%` is pg_trgm's similarity test (threshold 0.3, as before) written so the
+ * trigram index on the name can be used.
  */
 async function matchingIds(q: string): Promise<string[]> {
   const rows = await query<{ id: string }>(
     `SELECT id FROM alumni
       WHERE (first_name_th || ' ' || last_name_th) ILIKE $1 OR nickname ILIKE $1
-         OR similarity(first_name_th || ' ' || last_name_th, $2) > 0.3
+         OR (first_name_th || ' ' || last_name_th) % $2
      UNION
      SELECT alumni_id FROM alumni_former_name
       WHERE (first_name_th || ' ' || last_name_th) ILIKE $1
-         OR similarity(first_name_th || ' ' || last_name_th, $2) > 0.3
+         OR (first_name_th || ' ' || last_name_th) % $2
      UNION
      SELECT alumni_id FROM employment WHERE is_current AND organization ILIKE $1`,
     [`%${q}%`, q],
@@ -124,6 +127,13 @@ async function facet(f: DirFilter, ids: string[] | null, key: FacetKey, select: 
 
 /** FR-DIR-03 — counts per option, with every *other* active filter applied. */
 export async function getFacets(f: DirFilter): Promise<Facets> {
+  const unfiltered = !f.q && !f.cohort.length && !f.program.length && !f.level.length && !f.province.length && !f.category.length && !f.skill.length;
+  // The unfiltered counts are the same for everyone and name nobody.
+  if (unfiltered) return cached("dir:facets", 60_000, () => computeFacets(f));
+  return computeFacets(f);
+}
+
+async function computeFacets(f: DirFilter): Promise<Facets> {
   const ids = f.q ? await matchingIds(f.q) : null;
   const [cohort, program, level, province, category, skill] = await Promise.all([
     facet(f, ids, "cohort", "d.admission_year::text AS value, d.admission_year::text AS label", "d.admission_year", "", 60),
@@ -253,6 +263,10 @@ export async function getDirectoryPerson(id: string, viewer: Viewer): Promise<(D
 
 /** FR-DIR-04 — cohort roll: counts per admission year and programme. */
 export async function getCohortRoll(): Promise<{ year: number; total: number; programs: { name: string; level: string; n: number }[] }[]> {
+  return cached("dir:cohorts", 300_000, loadCohortRoll);
+}
+
+async function loadCohortRoll(): Promise<{ year: number; total: number; programs: { name: string; level: string; n: number }[] }[]> {
   const rows = await query<{ year: number; name: string; level: string; n: string }>(
     `SELECT admission_year AS year, program_current_name_th AS name, degree_level::text AS level, count(*) AS n
      FROM directory_public GROUP BY 1, 2, 3 ORDER BY 1 DESC, 4 DESC`,
@@ -269,6 +283,10 @@ export async function getCohortRoll(): Promise<{ year: number; total: number; pr
 
 /** FR-DIR-05 — headline figures for the home page, from real data. */
 export async function getSiteFigures(): Promise<{ alumni: number; cohorts: number; programs: number; freshPct: number } | null> {
+  return cached("site:figures", 300_000, loadSiteFigures);
+}
+
+async function loadSiteFigures(): Promise<{ alumni: number; cohorts: number; programs: number; freshPct: number } | null> {
   try {
     const [r] = await query<{ alumni: string; cohorts: string; programs: string; fresh: string }>(
       `SELECT count(*) AS alumni,
@@ -287,4 +305,14 @@ export async function getSiteFigures(): Promise<{ alumni: number; cohorts: numbe
   } catch {
     return null;
   }
+}
+
+/** Cohorts and programmes that have listed alumni, for the home-page search box. */
+export function getDirectoryOptions(): Promise<{ kind: string; value: string; label: string }[]> {
+  return cached("dir:options", 300_000, () =>
+    query<{ kind: string; value: string; label: string }>(
+      `SELECT DISTINCT 'cohort' AS kind, admission_year::text AS value, admission_year::text AS label FROM directory_public
+       UNION SELECT DISTINCT 'program', program_current_id::text, degree_level::text || ' ' || program_current_name_th FROM directory_public`,
+    ),
+  );
 }
