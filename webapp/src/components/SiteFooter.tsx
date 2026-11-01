@@ -63,7 +63,7 @@ export default function SiteFooter({ settings }: { settings: Settings }) {
             © 2569 คณะวิศวกรรมศาสตร์และเทคโนโลยีอุตสาหกรรม มหาวิทยาลัยกาฬสินธุ์ — เว็บไซต์ร่างเพื่อการออกแบบระบบ
           </span>
           <span>
-            <a href="#">นโยบายความเป็นส่วนตัว (PDPA)</a> · <Link href="/admin">สำหรับเจ้าหน้าที่</Link>
+            <Link href="/privacy">นโยบายความเป็นส่วนตัว (PDPA)</Link> · <Link href="/admin">สำหรับเจ้าหน้าที่</Link>
           </span>
         </div>
       </div>

@@ -1043,3 +1043,7 @@ fieldset.field legend { font-weight: 600; margin-bottom: 6px; }
 .gallery-grid figcaption { font-size: 13px; color: var(--color-muted); margin-top: 4px; }
 .ref-form { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .ref-form input:not([type=checkbox]), .ref-form select { min-width: 160px; }
+
+.legal h2 { font-size: 19px; margin: 28px 0 8px; }
+.legal ul { padding-left: 20px; }
+.legal li { margin-bottom: 6px; }

@@ -900,6 +900,7 @@ function StepConsent({ form, set, errors, programs }: StepProps & { programs: Pr
             <span className="choice-body">
               ข้าพเจ้ายินยอมให้คณะวิศวกรรมศาสตร์และเทคโนโลยีอุตสาหกรรม มหาวิทยาลัยกาฬสินธุ์
               จัดเก็บและใช้ข้อมูลข้างต้นเพื่อการติดต่อ การจัดกิจกรรมศิษย์เก่า และการรายงานประกันคุณภาพการศึกษา
+              ตาม <a href="/privacy" target="_blank" rel="noopener">นโยบายความเป็นส่วนตัว</a>
             </span>
           </span>
         </label>

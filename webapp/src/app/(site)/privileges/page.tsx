@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import PageHead from "@/components/PageHead";
 import Completeness from "@/components/Completeness";
@@ -60,7 +61,7 @@ export default function PrivilegesPage() {
               <p style={{ marginTop: "14px", fontSize: ".88rem", color: "var(--muted)" }}>
                 บัตรศิษย์เก่าดิจิทัลแสดงผลบนมือถือ ใช้แสดงตนในกิจกรรมของคณะได้ทันที
               </p>
-              <a href="#" className="btn btn-primary">ยืนยันตัวตนเพื่อรับบัตร</a>
+              <Link href="/register" className="btn btn-primary">ยืนยันตัวตนเพื่อรับบัตร</Link>
             </div>
           </div>
 
