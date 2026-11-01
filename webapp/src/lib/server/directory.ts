@@ -45,8 +45,31 @@ export function parseDirFilter(sp: Record<string, string | string[] | undefined>
   };
 }
 
+/**
+ * FR-DIR-10 — people whose current name, nickname, former name or current
+ * workplace matches the text, by substring or trigram similarity. Run once
+ * per request against the base tables (trigram-indexed); every directory
+ * query then filters by these ids instead of re-scoring each row of the
+ * directory view — that took over 2 s at 20,000 records (NFR-PERF-02).
+ */
+async function matchingIds(q: string): Promise<string[]> {
+  const rows = await query<{ id: string }>(
+    `SELECT id FROM alumni
+      WHERE (first_name_th || ' ' || last_name_th) ILIKE $1 OR nickname ILIKE $1
+         OR similarity(first_name_th || ' ' || last_name_th, $2) > 0.3
+     UNION
+     SELECT alumni_id FROM alumni_former_name
+      WHERE (first_name_th || ' ' || last_name_th) ILIKE $1
+         OR similarity(first_name_th || ' ' || last_name_th, $2) > 0.3
+     UNION
+     SELECT alumni_id FROM employment WHERE is_current AND organization ILIKE $1`,
+    [`%${q}%`, q],
+  );
+  return rows.map((r) => r.id);
+}
+
 /** Builds the WHERE clause, optionally leaving one facet out (for that facet's own counts). */
-function whereFor(f: DirFilter, skip?: FacetKey): { sql: string; params: unknown[] } {
+function whereFor(f: DirFilter, ids: string[] | null, skip?: FacetKey): { sql: string; params: unknown[] } {
   const where: string[] = [];
   const params: unknown[] = [];
   const p = (v: unknown) => {
@@ -54,20 +77,7 @@ function whereFor(f: DirFilter, skip?: FacetKey): { sql: string; params: unknown
     return `$${params.length}`;
   };
 
-  if (f.q) {
-    const like = p(`%${f.q}%`);
-    const raw = p(f.q);
-    // FR-DIR-10: substring OR trigram similarity, over current and former names.
-    where.push(`(
-      (d.first_name_th || ' ' || d.last_name_th) ILIKE ${like}
-      OR d.nickname ILIKE ${like}
-      OR similarity(d.first_name_th || ' ' || d.last_name_th, ${raw}) > 0.3
-      OR EXISTS (SELECT 1 FROM alumni_former_name fn WHERE fn.alumni_id = d.id AND (
-           (fn.first_name_th || ' ' || fn.last_name_th) ILIKE ${like}
-           OR similarity(fn.first_name_th || ' ' || fn.last_name_th, ${raw}) > 0.3))
-      OR d.current_organization ILIKE ${like}
-    )`);
-  }
+  if (ids) where.push(`d.id = ANY(${p(ids)}::uuid[])`);
   if (skip !== "cohort" && f.cohort.length) where.push(`d.admission_year = ANY(${p(f.cohort.map(Number))}::int[])`);
   if (skip !== "program" && f.program.length) where.push(`d.program_current_id = ANY(${p(f.program.map(Number))}::int[])`);
   if (skip !== "level" && f.level.length) where.push(`d.degree_level::text = ANY(${p(f.level)}::text[])`);
@@ -100,8 +110,8 @@ export interface Facets {
   skill: FacetOption[];
 }
 
-async function facet(f: DirFilter, key: FacetKey, select: string, groupBy: string, extra = "", limit = 30): Promise<FacetOption[]> {
-  const w = whereFor(f, key);
+async function facet(f: DirFilter, ids: string[] | null, key: FacetKey, select: string, groupBy: string, extra = "", limit = 30): Promise<FacetOption[]> {
+  const w = whereFor(f, ids, key);
   const rows = await query<{ value: string; label: string; count: string }>(
     `SELECT ${select}, count(DISTINCT d.id) AS count
      FROM directory_public d ${extra}
@@ -114,23 +124,26 @@ async function facet(f: DirFilter, key: FacetKey, select: string, groupBy: strin
 
 /** FR-DIR-03 — counts per option, with every *other* active filter applied. */
 export async function getFacets(f: DirFilter): Promise<Facets> {
+  const ids = f.q ? await matchingIds(f.q) : null;
   const [cohort, program, level, province, category, skill] = await Promise.all([
-    facet(f, "cohort", "d.admission_year::text AS value, d.admission_year::text AS label", "d.admission_year", "", 60),
-    facet(f, "program", "d.program_current_id::text AS value, d.degree_level || ' ' || d.program_current_name_th AS label", "d.program_current_id"),
-    facet(f, "level", "d.degree_level::text AS value, d.degree_level::text AS label", "d.degree_level"),
+    facet(f, ids, "cohort", "d.admission_year::text AS value, d.admission_year::text AS label", "d.admission_year", "", 60),
+    facet(f, ids, "program", "d.program_current_id::text AS value, d.degree_level || ' ' || d.program_current_name_th AS label", "d.program_current_id"),
+    facet(f, ids, "level", "d.degree_level::text AS value, d.degree_level::text AS label", "d.degree_level"),
     facet(
       f,
+      ids,
       "province",
       "d.province AS value, d.province AS label",
       "CASE WHEN coalesce(d.field_visibility->>'province', d.visibility::text) <> 'private' THEN d.province END",
     ),
     facet(
       f,
+      ids,
       "category",
       "d.current_job_category AS value, d.current_job_category AS label",
       "CASE WHEN coalesce(d.field_visibility->>'workplace', d.visibility::text) <> 'private' THEN d.current_job_category END",
     ),
-    facet(f, "skill", "s.name AS value, s.name AS label", "s.name", "JOIN alumni_skill x ON x.alumni_id = d.id JOIN skill s ON s.id = x.skill_id", 25),
+    facet(f, ids, "skill", "s.name AS value, s.name AS label", "s.name", "JOIN alumni_skill x ON x.alumni_id = d.id JOIN skill s ON s.id = x.skill_id", 25),
   ]);
   // Cohorts read best newest-first, not by size.
   cohort.sort((a, b) => Number(b.value) - Number(a.value));
@@ -209,7 +222,8 @@ const SELECT = `
   FROM directory_public d`;
 
 export async function searchDirectory(f: DirFilter, viewer: Viewer): Promise<{ people: DirectoryPerson[]; total: number }> {
-  const w = whereFor(f);
+  const ids = f.q ? await matchingIds(f.q) : null;
+  const w = whereFor(f, ids);
   const order = f.q
     ? `ORDER BY greatest(similarity(d.first_name_th || ' ' || d.last_name_th, $${w.params.length + 1}),
                 CASE WHEN (d.first_name_th || ' ' || d.last_name_th) ILIKE $${w.params.length + 2} THEN 1 ELSE 0 END) DESC,

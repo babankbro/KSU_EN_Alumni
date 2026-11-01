@@ -29,3 +29,6 @@ Desktop.ini
 npm-debug.log*
 yarn-error.log*
 *.log
+
+# --- backups: database dumps and file copies contain personal data ---
+backups/

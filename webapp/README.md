@@ -91,6 +91,39 @@ ssh brain-prod "cd /root/ksu-alumni && git pull && cd webapp && docker compose -
 
 ถ้ามีไฟล์ migration ใหม่ใน `db/` ให้รันตามหัวข้อ "อัปเดตฐานข้อมูลที่มีอยู่แล้ว" ด้านบน (ผ่าน `ssh brain-prod`)
 
+## การสำรองข้อมูล (NFR-SEC-05)
+
+บริการ `backup` และ `backup-files` ใน compose ทำงานเองทุก `BACKUP_INTERVAL_HOURS` (ค่าเริ่มต้น 24 ชั่วโมง) และทำรอบแรกทันทีที่เริ่ม
+
+| ที่เก็บ | เนื้อหา |
+|---|---|
+| `backups/db/alumni-<เวลา UTC>.dump` | `pg_dump` แบบ custom format ตรวจว่าอ่านกลับได้ก่อนเก็บ เก็บไว้ `BACKUP_KEEP` ไฟล์ล่าสุด (ค่าเริ่มต้น 14) |
+| `backups/db/latest.txt` | ชื่อไฟล์ล่าสุดที่ผ่านการตรวจ |
+| `backups/files/` | สำเนาไฟล์ใน MinIO (รูป PDF) ให้ตรงกับ bucket ปัจจุบัน |
+
+**โฟลเดอร์ `backups/` มีข้อมูลส่วนบุคคล** — ถูก gitignore แล้ว และควรคัดลอกไปเก็บนอกเครื่องนี้ (เช่น ไดรฟ์ของคณะ) อย่างน้อยสัปดาห์ละครั้ง ไม่เช่นนั้นถ้าเครื่องเสีย สำรองก็หายไปด้วย
+
+ทดสอบกู้คืน (กู้ลงฐานข้อมูลชั่วคราวแล้วเทียบจำนวนแถวกับฐานจริง ไม่แตะฐานจริง):
+
+```bash
+sh scripts/restore-test.sh
+```
+
+กู้คืนจริงเมื่อฐานข้อมูลเสียหาย (ลบข้อมูลปัจจุบันทั้งหมด — หยุดเว็บก่อน):
+
+```bash
+docker compose stop web cron
+docker exec -i ksu-alumni-db psql -U alumni -d postgres -c "DROP DATABASE alumni" -c "CREATE DATABASE alumni"
+docker exec -i ksu-alumni-db pg_restore --no-owner -U alumni -d alumni < backups/db/<ไฟล์>.dump
+docker compose start web cron
+```
+
+กู้ไฟล์คืนเข้า MinIO: `docker exec ksu-alumni-backup-files mc mirror /backups/files/alumni-files src/alumni-files`
+
+## วัดความเร็วทำเนียบ (NFR-PERF-02)
+
+`scripts/perf-seed.sql` สร้างศิษย์เก่าสมมติ 20,000 คน — **รันกับฐานข้อมูลสำเนาเท่านั้น** แล้วใช้ `scripts/perf-directory.sh` วัดเวลาตอบของหน้าทำเนียบผ่าน HTTP คำสั่งใช้งานอยู่ในหัวของทั้งสองไฟล์
+
 ## รันแบบพัฒนา (ไม่ build image)
 
 ใช้ db + minio จาก compose แล้วรันเว็บบนเครื่อง:

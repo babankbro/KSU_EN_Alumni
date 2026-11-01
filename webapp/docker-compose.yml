@@ -41,6 +41,9 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin_dev_only}
+      # The healthcheck's `mc ready local` reads its alias from here, so it
+      # cannot be broken by editing mc's config inside the container.
+      MC_HOST_local: http://localhost:9000
     volumes:
       - miniodata:/data
     ports:
@@ -131,6 +134,47 @@ services:
     container_name: ksu-alumni-mailpit
     ports:
       - "${MAILPIT_UI_PORT:-8025}:8025"
+    restart: unless-stopped
+
+  # NFR-SEC-05: nightly database dump (verified, newest BACKUP_KEEP kept)
+  # and a mirror of the file bucket, both into ./backups — which holds
+  # personal data, is git-ignored, and should be copied off this machine.
+  # Restore drill: sh scripts/restore-test.sh
+  backup:
+    image: postgres:16-alpine
+    container_name: ksu-alumni-backup
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGHOST: db
+      PGUSER: ${POSTGRES_USER:-alumni}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-alumni_dev_only}
+      PGDATABASE: ${POSTGRES_DB:-alumni}
+      BACKUP_INTERVAL_HOURS: ${BACKUP_INTERVAL_HOURS:-24}
+      BACKUP_KEEP: ${BACKUP_KEEP:-14}
+    volumes:
+      - ./backups:/backups
+      - ./scripts/backup.sh:/backup.sh:ro
+    entrypoint: ["sh", "/backup.sh"]
+    restart: unless-stopped
+
+  backup-files:
+    image: minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
+    container_name: ksu-alumni-backup-files
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MC_HOST_src: http://${MINIO_ROOT_USER:-minioadmin}:${MINIO_ROOT_PASSWORD:-minioadmin_dev_only}@minio:9000
+      MINIO_BUCKET: ${MINIO_BUCKET:-alumni-files}
+      BACKUP_INTERVAL_HOURS: ${BACKUP_INTERVAL_HOURS:-24}
+    volumes:
+      - ./backups:/backups
+      - ./scripts/backup-files.sh:/backup-files.sh:ro
+    entrypoint: ["sh", "/backup-files.sh"]
+    healthcheck:
+      disable: true
     restart: unless-stopped
 
 volumes:
