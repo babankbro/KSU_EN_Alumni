@@ -22,9 +22,9 @@ services:
   # No SMTP account yet: mail is caught by Mailpit instead of being delivered.
   # Read it through an SSH tunnel: ssh -L 8025:127.0.0.1:8026 brain-prod
   mailpit:
-    ports: !reset
+    ports: !override
       - "127.0.0.1:${MAILPIT_UI_PORT:-8026}:8025"
 
   web:
-    ports: !reset
+    ports: !override
       - "127.0.0.1:${WEB_PORT:-3200}:3000"
