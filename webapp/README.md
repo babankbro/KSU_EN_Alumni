@@ -68,6 +68,29 @@ docker exec -i ksu-alumni-db psql -v ON_ERROR_STOP=1 -U alumni -d alumni < db/00
 
 LINE Login และการส่งทาง LINE ทำงานเมื่อตั้ง `LINE_*` ใน `.env` เท่านั้น (ยังไม่ได้ทดสอบกับ channel จริง)
 
+## Production — https://alumni.iaaaiksu.com
+
+รันบนเซิร์ฟเวอร์ `brain-prod` (187.127.98.12) ซึ่งใช้ร่วมกับโปรเจ็คอื่น — host nginx รับโดเมนแล้ว proxy ไปที่ `127.0.0.1:3200`
+ส่วน db / minio ไม่เปิดพอร์ตออกนอก compose network (ดู `docker-compose.prod.yml`)
+
+| รายการ | ที่อยู่บนเซิร์ฟเวอร์ |
+|---|---|
+| โค้ด | `/root/ksu-alumni` (clone จาก GitHub) |
+| ค่าลับ | `/root/ksu-alumni/webapp/.env` — ไม่อยู่ใน git |
+| nginx | `/etc/nginx/sites-available/alumni.iaaaiksu.com` (ต้นฉบับ `deploy/nginx/`) |
+| อีเมลที่ระบบส่ง | Mailpit — `ssh -L 8025:127.0.0.1:8026 brain-prod` แล้วเปิด http://localhost:8025 |
+
+`.env` บนเซิร์ฟเวอร์ต่างจาก `.env.example` ตรงที่ `COOKIE_SECURE=true`, `TRUST_PROXY=true`, `APP_URL=https://alumni.iaaaiksu.com`, `WEB_PORT=3200`
+และรหัสผ่าน/secret ทุกตัวสุ่มใหม่ (`openssl rand -hex 24`)
+
+อัปเดตเว็บหลัง `git push`:
+
+```bash
+ssh brain-prod "cd /root/ksu-alumni && git pull && cd webapp && docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build"
+```
+
+ถ้ามีไฟล์ migration ใหม่ใน `db/` ให้รันตามหัวข้อ "อัปเดตฐานข้อมูลที่มีอยู่แล้ว" ด้านบน (ผ่าน `ssh brain-prod`)
+
 ## รันแบบพัฒนา (ไม่ build image)
 
 ใช้ db + minio จาก compose แล้วรันเว็บบนเครื่อง:

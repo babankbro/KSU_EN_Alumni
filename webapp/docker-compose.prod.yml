@@ -1,0 +1,30 @@
+# KSU Engineering Alumni — production overrides (alumni.iaaaiksu.com)
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# The server is shared with other projects that already hold 3000, 5432,
+# 9000/9001 and 8000 on localhost, so only the web container is published,
+# on 127.0.0.1 only, and host nginx proxies the domain to it
+# (deploy/nginx/alumni.iaaaiksu.com.conf). db, minio and mailpit stay on the
+# compose network and are reached with `docker exec` when needed.
+#
+# Secrets live in .env on the server (never committed). See README → Production.
+
+name: ksu-alumni
+
+services:
+  db:
+    ports: !reset []
+
+  minio:
+    ports: !reset []
+
+  # No SMTP account yet: mail is caught by Mailpit instead of being delivered.
+  # Read it through an SSH tunnel: ssh -L 8025:127.0.0.1:8026 brain-prod
+  mailpit:
+    ports: !reset
+      - "127.0.0.1:${MAILPIT_UI_PORT:-8026}:8025"
+
+  web:
+    ports: !reset
+      - "127.0.0.1:${WEB_PORT:-3200}:3000"

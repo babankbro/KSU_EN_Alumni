@@ -6,4 +6,7 @@ npm-debug.log*
 README.md
 Dockerfile
 docker-compose.yml
+docker-compose.prod.yml
+deploy
+.env
 .dockerignore
