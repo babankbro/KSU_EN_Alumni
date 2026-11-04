@@ -3,6 +3,7 @@ title: KSU ENG Alumni — Home
 type: moc
 status: active
 created: 2026-09-23
+updated: 2026-11-04
 tags: [moc, alumni, ksu]
 ---
 
@@ -22,7 +23,8 @@ Vault สำหรับโปรเจ็ค **ระบบศิษย์เ�
 - [[Sources]] — แหล่งอ้างอิงทั้งหมด
 
 ## 🏗️ Design
-- [[SRS]] — **Software Requirements Specification ฉบับเต็ม** ⭐ (v0.2 — 2026-10-30)
+- [[SRS]] — **Software Requirements Specification ฉบับเต็ม** ⭐ (v0.4 — 2026-11-04)
+  - สถานะ: FR ✅ 112/114 (เหลือ LINE 2 ข้อ) · NFR ✅ 22/26 · DR ✅ 6/6 — ดูภาคผนวก ค
 - [[Admin Back Office]] — ระบบจัดการ: ข่าว, ข้อความ/รูปบนเว็บ, ข้อมูลและจำนวนสมาชิก
 - [[Database Design]] — schema PostgreSQL ที่ใช้งานจริง + MinIO
 - [[Requirements]] — ความต้องการฉบับย่อ (สรุปจาก SRS)
@@ -33,6 +35,8 @@ Vault สำหรับโปรเจ็ค **ระบบศิษย์เ�
 
 ## 🎨 Prototype
 - `webapp/` — **แอป Next.js 15 + TypeScript + PostgreSQL + MinIO** (ตัวหลัก) โทนเลือดหมู
+  - ออนไลน์ที่ **https://alumni.iaaaiksu.com** (เซิร์ฟเวอร์ `brain-prod`, วิธีอัปเดตอยู่ใน `webapp/README.md`)
+  - คู่มือ: `webapp/docs/INSTALL.md` (ติดตั้ง) · `ADMIN-GUIDE.md` (เจ้าหน้าที่) · `USER-GUIDE.md` (ศิษย์เก่า)
   - วิธีรันอยู่ใน `webapp/README.md` (ต้องตั้ง `ADMIN_BOOTSTRAP_PASSWORD` ใน `.env` ก่อน)
   - เครื่องนี้: เว็บ http://localhost:3100 · สมัคร `/register` · **หลังบ้าน `/admin`** · MinIO console :9011 · PostgreSQL :5433
   - บัญชีผู้ดูแลคนแรกอยู่ใน `webapp/.env` (ไฟล์นี้ไม่ขึ้น git)

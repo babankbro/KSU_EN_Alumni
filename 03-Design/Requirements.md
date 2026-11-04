@@ -1,14 +1,18 @@
 ---
 title: Requirements
 type: design
-status: draft
+status: superseded
 created: 2026-09-23
+updated: 2026-11-04
 tags: [design, requirements]
 ---
 
 # 📋 Requirements (v0 — ร่างจาก research)
 
 ที่มา: [[Feature Matrix]] + [[Design Insights]] · **ยังต้องยืนยันกับผู้มีส่วนได้ส่วนเสีย**
+
+> ℹ️ ฉบับย่อนี้เป็นร่างแรก ฉบับที่ใช้จริงคือ [[SRS]] v0.4 (FR 114 ข้อ, NFR 26 ข้อ) — รหัสในหน้านี้ไม่ตรงกับรหัสใน SRS
+> สถานะ 2026-11-04: FR ✅ 112/114 · NFR ✅ 22/26 · DR ✅ 6/6
 
 รหัส: `FR` = functional · `NFR` = non-functional · ลำดับ: `M` must / `S` should / `C` could
 
@@ -37,14 +41,14 @@ tags: [design, requirements]
 
 ## Non-functional
 
-| ID | ความต้องการ |
-|---|---|
-| NFR-01 | สอดคล้อง **PDPA** — consent, สิทธิเจ้าของข้อมูล, audit log → [[PDPA and Privacy]] |
-| NFR-02 | Mobile-first / responsive (ศิษย์เก่าเข้าผ่านมือถือเป็นหลัก) |
-| NFR-03 | รองรับภาษาไทยเต็มรูปแบบ (เรียงลำดับ, ค้นหา, คำนำหน้าชื่อ) |
-| NFR-04 | ข้อมูลติดต่อต้อง login ก่อนดู + ป้องกัน scraping / rate limit |
-| NFR-05 | ดูแลรักษาได้หลังส่งมอบ — เอกสาร, backup, ผู้รับผิดชอบชัดเจน (บทเรียนจาก [[Benchmark - KSU]]) |
-| NFR-06 | รองรับผู้ใช้พร้อมกันระดับ peak ช่วงงานคืนเหย้า |
+| ID | ความต้องการ | ใน SRS | สถานะ (2026-11-04) |
+|---|---|---|---|
+| NFR-01 | สอดคล้อง **PDPA** — consent, สิทธิเจ้าของข้อมูล, audit log → [[PDPA and Privacy]] | NFR-PDPA-01–05, SEC-04 | ✅ (หน้า `/privacy` รอ DPO) |
+| NFR-02 | Mobile-first / responsive (ศิษย์เก่าเข้าผ่านมือถือเป็นหลัก) | NFR-PERF-01 | 🟡 ประเมินผ่าน รอวัดบนโทรศัพท์จริง |
+| NFR-03 | รองรับภาษาไทยเต็มรูปแบบ (เรียงลำดับ, ค้นหา, คำนำหน้าชื่อ) | CON-03 | ✅ ค้นชื่อไทยด้วย pg_trgm รองรับสะกดผิด |
+| NFR-04 | ข้อมูลติดต่อต้อง login ก่อนดู + ป้องกัน scraping / rate limit | FR-DIR-06, NFR-SEC-03 | ✅ |
+| NFR-05 | ดูแลรักษาได้หลังส่งมอบ — เอกสาร, backup, ผู้รับผิดชอบชัดเจน (บทเรียนจาก [[Benchmark - KSU]]) | NFR-MNT-01–03, SEC-05 | ✅ เอกสาร + backup · ⏳ ผู้รับผิดชอบ (MNT-02) |
+| NFR-06 | รองรับผู้ใช้พร้อมกันระดับ peak ช่วงงานคืนเหย้า | NFR-PERF-03 | ✅ วัดแล้ว 300 คน p95 1.52 s · รอคณะยืนยันเป้า |
 
 ## ต่อไป
 [[Data Model]] · [[Architecture]] · [[Roadmap]]

@@ -3,13 +3,14 @@ title: Database Design
 type: design
 status: implemented
 created: 2026-10-30
+updated: 2026-11-04
 tags: [design, database, postgresql, minio]
 ---
 
 # 🗄️ Database Design
 
 ออกแบบจริงที่ใช้งานใน `webapp/db/` (PostgreSQL 16) — ต่อยอดจาก [[Data Model]] ซึ่งเป็นร่างแนวคิด
-ความต้องการอ้างอิง [[SRS]] v0.3
+ความต้องการอ้างอิง [[SRS]] v0.4
 
 | ไฟล์ | เนื้อหา |
 |---|---|
@@ -19,8 +20,11 @@ tags: [design, database, postgresql, minio]
 | `004_admin.sql` | บัญชีเจ้าหน้าที่, session, ข้อความและรูปบนเว็บ → [[Admin Back Office]] |
 | `005_remaining_srs.sql` | บัญชีศิษย์เก่า/นักศึกษา, rate limit, การมองเห็นรายฟิลด์, คำขอ PDPA, ปฏิสัมพันธ์ข่าว, กิจกรรม, งาน, บทความ, รางวัล, แบบสำรวจ, แจ้งเตือน, แกลเลอรี, นำเข้าและรวมระเบียน |
 | `006_posts_events_jobs.sql` | รูปของข่าวศิษย์เก่า (`post_image`), จังหวัดของประกาศงาน, ฉบับร่างของกิจกรรม, index ค้นหาบทความ |
+| `007_directory_speed.sql` | เก็บความยินยอมล่าสุดและงานปัจจุบันในระเบียนศิษย์เก่าผ่าน trigger · เขียน view ทำเนียบใหม่ (NFR-PERF-02/03) |
+| `008_planner.sql` | ปิด JIT ของฐานข้อมูล + ANALYZE (NFR-PERF-01) |
+| `009_faculty.sql` | ตาราง `faculty` · หลักสูตรสังกัดคณะ · บัญชีเจ้าหน้าที่จำกัดคณะได้ (NFR-SCA-01) |
 
-ไฟล์ทั้งหมดรันอัตโนมัติเมื่อ container ฐานข้อมูลเริ่มกับ volume ว่าง · `004`–`006` เขียนแบบ idempotent จึงรันซ้ำกับฐานข้อมูลเดิมได้
+ไฟล์ทั้งหมดรันอัตโนมัติเมื่อ container ฐานข้อมูลเริ่มกับ volume ว่าง · `004`–`009` เขียนแบบ idempotent จึงรันซ้ำกับฐานข้อมูลเดิมได้
 
 ---
 
@@ -146,6 +150,14 @@ View **`program_resolved`** เดินตาม `successor_id` แบบ recur
 | ข่าวทางการ | `news_tag`, `news_attachment`, `gallery_album`, `gallery_photo` | |
 | หลังบ้าน | `import_batch`, `alumni_merge`, `job_category` | |
 
+## 5c. สมรรถนะและการขยาย (007–009, เพิ่ม 2026-11-04)
+
+| ไฟล์ | สิ่งที่เปลี่ยน | เหตุผล |
+|---|---|---|
+| `007` | `alumni.directory_consent`, `alumni.current_employment_id` ปรับด้วย trigger บน `consent_log` และ `employment` · partial index `alumni_directory_idx` · `directory_public` join งานด้วย id ตรง | เดิม view คำนวณความยินยอมล่าสุดและงานปัจจุบันของทุกคนใหม่ทุกครั้ง ระบบอิ่มตัวที่ ~22 คำขอ/วินาที — ตรวจแล้วว่าแถวในทำเนียบเหมือนเดิมทุกแถว |
+| `008` | `ALTER DATABASE … SET jit = off` + ANALYZE | ตารางที่ไม่เคยถูก ANALYZE ทำให้ planner คาดงานหนักเกินจริงและเสีย ~450 ms ไปกับ JIT ทุกคำสั่ง |
+| `009` | `faculty`, `program.faculty_id` (NOT NULL, ค่าเริ่มต้นคณะวิศวะฯ), `admin_user.faculty_id` (NULL = ทุกคณะ), view `alumni_faculty` | ขยายไปคณะอื่นได้โดยไม่ออกแบบใหม่ ศิษย์เก่ารู้คณะผ่านหลักสูตร |
+
 ## 6. Audit log
 
 `audit_log` เป็น **append-only** ด้วย trigger ที่ปฏิเสธ UPDATE / DELETE / TRUNCATE
@@ -161,6 +173,8 @@ View **`program_resolved`** เดินตาม `successor_id` แบบ recur
 - Enum label ของ PostgreSQL ยาวได้ไม่เกิน **63 bytes** — ภาษาไทยใช้ 3 bytes/ตัวอักษร จึงไม่เกิน 21 ตัว (เคยชนกับ "ข่าวประชาสัมพันธ์ทั่วไป" ต้องย่อ)
 - แอปเชื่อมต่อเป็นเจ้าของ schema — ก่อนใช้งานจริงควรแยก role สำหรับ migration กับ role สำหรับแอป
 - ยังไม่มีระบบ migration อัตโนมัติ สำหรับฐานข้อมูลที่มีอยู่แล้วให้รันไฟล์ใหม่ด้วยมือ:
-  `docker exec -i ksu-alumni-db psql -U alumni -d alumni < db/006_posts_events_jobs.sql`
+  `docker exec -i ksu-alumni-db psql -v ON_ERROR_STOP=1 -U alumni -d alumni < db/009_faculty.sql`
+- สำรองฐานข้อมูลด้วย `pg_dump` อัตโนมัติทุก 24 ชม. (บริการ `backup`) และทดสอบกู้คืนด้วย `scripts/restore-test.sh`
+- ทดสอบสมรรถนะด้วยข้อมูลสมมติ 20,000 คน: `scripts/perf-seed.sql` — **ห้ามรันกับฐานจริง**
 
 [[SRS]] · [[Data Model]] · [[Architecture]] · [[PDPA and Privacy]]

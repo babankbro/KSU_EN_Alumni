@@ -3,6 +3,7 @@ title: Open Questions
 type: project
 status: open
 created: 2026-09-23
+updated: 2026-11-04
 tags: [project, decisions]
 ---
 
@@ -26,12 +27,22 @@ tags: [project, decisions]
 
 ## ระบบหลังบ้าน (เพิ่ม 2026-10-30)
 - [ ] ใครได้บทบาท `admin` (เห็นข้อมูลส่วนบุคคล) และใครได้ `editor` (แก้ข่าว/เนื้อหาเท่านั้น) — ดู [[Admin Back Office]]
-- [ ] จะ deploy หลัง reverse proxy หรือไม่ (กำหนดค่า `TRUST_PROXY`)
+- [x] จะ deploy หลัง reverse proxy หรือไม่ (กำหนดค่า `TRUST_PROXY`)
+  - 2026-11-01: ใช้ nginx ของเซิร์ฟเวอร์ที่ alumni.iaaaiksu.com เขียนทับ `X-Forwarded-For` และตั้ง `TRUST_PROXY=true`
 
 ## เทคนิค
 - [ ] Tech stack — ดู [[Architecture]] (ตัดสินใจร่วมกับทีม)
 - [ ] Hosting: server ของมหาวิทยาลัย หรือ cloud? subdomain อะไร?
 - [ ] ยืนยันตัวตน: รหัส นศ. + วันเกิด / LINE Login / TUC Digital ID?
+
+## ก่อนเปิดใช้จริง (เพิ่ม 2026-11-04 จาก [[SRS]] v0.4)
+- [ ] เป้าหมายผู้ใช้พร้อมกัน (NFR-PERF-03) — ข้อเสนอ 300 คน p95 ≤ 2 วินาที ผ่านแล้วบนเครื่องทดสอบ
+- [ ] ใครรับผิดชอบระบบหลังส่งมอบ และใครต่ออายุโดเมน/hosting (NFR-MNT-02)
+- [ ] โดเมนสุดท้ายคือ alumni.iaaaiksu.com หรือย้ายไปโดเมนของมหาวิทยาลัย (เช่น `alumni.eng.ksu.ac.th`)
+- [ ] ฝ่าย IT ทดสอบเจาะระบบได้เมื่อไร (NFR-SEC-02)
+- [ ] กลุ่มศิษย์เก่าที่จะทดสอบการ claim โปรไฟล์ (NFR-USE-01)
+- [ ] บัญชี SMTP ของมหาวิทยาลัยสำหรับส่งอีเมลจริง
+- [ ] แผนย้ายไป Next.js 16 เพื่อปิดช่องโหว่ระดับ moderate ที่เหลือ
 
 ## งานวิจัย
 - [ ] เป้าหมายตีพิมพ์: TCI 1/2, การประชุมวิชาการ, หรือ international?
