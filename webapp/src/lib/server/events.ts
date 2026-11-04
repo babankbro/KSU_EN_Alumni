@@ -36,7 +36,7 @@ function toEvent(r: Row): EventData {
   return {
     id: r.id, title: r.title, description: r.description, startsAt: r.starts_at, endsAt: r.ends_at, venue: r.venue,
     isOnline: r.is_online, registrationOpen: r.registration_open, registrationClosesAt: r.registration_closes_at,
-    capacity: r.capacity, registered: Number(r.registered), coverUrl: r.cover_file_id ? fileUrl(r.cover_file_id) : null,
+    capacity: r.capacity, registered: Number(r.registered), coverUrl: r.cover_file_id ? fileUrl(r.cover_file_id, 1024) : null,
     isPublished: r.is_published,
   };
 }

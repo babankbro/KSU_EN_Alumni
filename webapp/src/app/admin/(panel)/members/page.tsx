@@ -8,7 +8,7 @@ import {
   thaiDate,
   type ClaimStatus,
 } from "@/lib/server/members";
-import { formatNumber } from "@/lib/format";
+import { formatNumber, pageParam } from "@/lib/format";
 
 export const metadata = { title: "สมาชิก" };
 
@@ -31,7 +31,7 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
 
   const status = STATUSES.includes(sp.status as ClaimStatus) ? (sp.status as ClaimStatus) : "";
   const level = LEVELS.includes(sp.level ?? "") ? sp.level! : "";
-  const page = Math.max(1, Number(sp.page) || 1);
+  const page = pageParam(sp.page);
   const q = (sp.q ?? "").slice(0, 100);
 
   const [stats, { rows, total }] = await Promise.all([

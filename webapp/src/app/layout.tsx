@@ -22,6 +22,10 @@ const notoThai = localFont({
   ],
   variable: "--font-noto-thai",
   display: "swap",
+  // NFR-PERF-01: eight preloaded font files (~190 KB) competed with the hero
+  // image on slow mobile links. With swap, text shows at once in the
+  // fallback font and switches when the file arrives.
+  preload: false,
 });
 
 const inter = localFont({
@@ -33,6 +37,7 @@ const inter = localFont({
   ],
   variable: "--font-inter",
   display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = {

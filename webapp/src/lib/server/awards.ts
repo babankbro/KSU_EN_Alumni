@@ -64,6 +64,6 @@ export async function listAwardees(): Promise<Awardee[]> {
     name: r.name, alumniId: r.alumni_id, listed: r.listed, citation: r.citation, round: r.round, cohort: r.cohort,
     program: r.program,
     // Public page: only photos their owners made public.
-    photoUrl: r.photo_file_id && r.photo_public ? fileUrl(r.photo_file_id) : null,
+    photoUrl: r.photo_file_id && r.photo_public ? fileUrl(r.photo_file_id, 256) : null,
   }));
 }

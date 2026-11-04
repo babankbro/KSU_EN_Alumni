@@ -5,9 +5,11 @@ import { getViewer } from "@/lib/server/member-auth";
 import { canSee, fieldVisibility, type Visibility } from "@/lib/server/profile";
 import { PUBLISHED_SQL, postVisibleSql } from "@/lib/server/posts";
 import { Readable } from "node:stream";
+import sharp from "sharp";
 
 export const dynamic = "force-dynamic";
 
+const WIDTHS = [64, 128, 256, 512, 1024];
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
@@ -22,7 +24,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  *                                               in the directory (FR-PROF-03)
  * - documents, attachments, award evidence    → staff; news attachments → anyone
  */
-export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
+export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
   if (!UUID.test(id)) return new Response("Not found", { status: 404 });
 
@@ -78,8 +80,27 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   // 404 rather than 403: do not confirm that a private file exists.
   if (!allowed) return new Response("Not found", { status: 404 });
 
+  // NFR-PERF-01 — ?w= returns a resized WebP for images, so a 52 px avatar
+  // does not download a full-size photo. Only a few widths, to keep caching
+  // effective and resizing cheap.
+  const width = Number(new URL(req.url).searchParams.get("w"));
+  const resize = WIDTHS.includes(width) && file.content_type.startsWith("image/");
+
   try {
     const stream = await getObjectStream(file.object_key);
+    if (resize) {
+      const chunks: Buffer[] = [];
+      for await (const c of stream) chunks.push(c as Buffer);
+      const out = await sharp(Buffer.concat(chunks)).rotate().resize({ width, withoutEnlargement: true }).webp({ quality: 78 }).toBuffer();
+      return new Response(new Uint8Array(out), {
+        headers: {
+          "Content-Type": "image/webp",
+          "Content-Length": String(out.length),
+          "Cache-Control": publicCache ? "public, max-age=31536000, immutable" : "private, max-age=3600",
+          "X-Content-Type-Options": "nosniff",
+        },
+      });
+    }
     return new Response(Readable.toWeb(stream) as ReadableStream, {
       headers: {
         "Content-Type": file.content_type,

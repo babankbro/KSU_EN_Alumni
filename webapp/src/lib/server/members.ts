@@ -294,7 +294,7 @@ export async function getMember(id: string): Promise<MemberDetail | null> {
     claimedAt: a.claimed_at,
     profileUpdatedAt: a.profile_updated_at,
     completeness: a.completeness_score,
-    photoUrl: a.photo_file_id ? fileUrl(a.photo_file_id) : null,
+    photoUrl: a.photo_file_id ? fileUrl(a.photo_file_id, 256) : null,
     formerNames: former.map((f) => f.n),
     contact: contact[0]
       ? { email: contact[0].email, phone: contact[0].phone, lineId: contact[0].line_id, province: contact[0].province, visibility: contact[0].visibility }

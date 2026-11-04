@@ -73,6 +73,7 @@ server {
     proxy_set_header X-Forwarded-For $remote_addr;   # เขียนทับ ไม่ต่อท้าย
     proxy_set_header X-Forwarded-Proto https;
   }
+  add_header Strict-Transport-Security "max-age=31536000" always;
 }
 ```
 
@@ -85,10 +86,10 @@ git pull
 docker compose up -d --build
 ```
 
-ถ้ามีไฟล์ใหม่ใน `db/` ให้รันกับฐานข้อมูลเดิมตามลำดับเลข (ทุกไฟล์ตั้งแต่ `004` รันซ้ำได้):
+ถ้ามีไฟล์ใหม่ใน `db/` ให้รันกับฐานข้อมูลเดิมตามลำดับเลข ทีละไฟล์ (ทุกไฟล์ตั้งแต่ `004` รันซ้ำได้) เช่น:
 
 ```bash
-docker exec -i ksu-alumni-db psql -v ON_ERROR_STOP=1 -U alumni -d alumni < db/007_directory_speed.sql
+docker exec -i ksu-alumni-db psql -v ON_ERROR_STOP=1 -U alumni -d alumni < db/009_faculty.sql
 ```
 
 สำรองก่อนอัปเดตทุกครั้ง: `docker compose restart backup` จะทำ dump ใหม่ทันที

@@ -32,6 +32,10 @@ export const LIMITS = {
   profileView: { bucket: "profile_view", max: 60, windowSec: 600 },
   /** Anonymous directory traffic as a whole. */
   directoryAnon: { bucket: "dir_anon", max: 2000, windowSec: 600 },
+  /** Public file uploads (registration photos/documents) per client IP. */
+  uploadPerIp: { bucket: "upload_ip", max: 30, windowSec: 3600 },
+  /** Whole-site ceiling on public uploads when the IP cannot be trusted. */
+  uploadGlobal: { bucket: "upload_all", max: 600, windowSec: 3600 },
   /** Content reports per account. */
   report: { bucket: "report", max: 20, windowSec: 3600 },
 } satisfies Record<string, Limit>;

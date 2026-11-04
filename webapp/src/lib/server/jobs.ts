@@ -1,4 +1,5 @@
 import "server-only";
+import { pageParam } from "@/lib/format";
 import { query } from "./db";
 
 /**
@@ -29,7 +30,7 @@ export function parseJobFilter(sp: Record<string, string | string[] | undefined>
     program: /^\d+$/.test(one("program")) ? one("program") : "",
     province: one("province").slice(0, 60),
     skill: one("skill").slice(0, 60),
-    page: Math.max(1, Number(one("page")) || 1),
+    page: pageParam(one("page")),
   };
 }
 

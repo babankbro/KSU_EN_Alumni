@@ -75,3 +75,12 @@ export function relativeThai(value: string): string {
 export function formatNumber(n: number): string {
   return n.toLocaleString("en-US");
 }
+
+/**
+ * Page number from a query string: a positive whole number, capped so
+ * "?page=Infinity" or "?page=1e9" cannot reach the database as an OFFSET.
+ */
+export function pageParam(v: string | undefined | null): number {
+  const n = Math.floor(Number(v));
+  return Number.isFinite(n) ? Math.min(Math.max(n, 1), 10_000) : 1;
+}

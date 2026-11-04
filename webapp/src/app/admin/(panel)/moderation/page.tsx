@@ -123,7 +123,7 @@ async function PendingPosts({ isAdmin }: { isAdmin: boolean }) {
             </p>
             {p.image_file_id ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={fileUrl(p.image_file_id)} alt="รูปประกอบข่าว" className="post-image-preview" />
+              <img src={fileUrl(p.image_file_id, 512)} alt="รูปประกอบข่าว" className="post-image-preview" />
             ) : null}
             <p className="mod-body">{p.body}</p>
             {p.tags?.length ? <p className="small">แท็ก: {p.tags.join(", ")}</p> : null}

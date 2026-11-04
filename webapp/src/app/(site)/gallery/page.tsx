@@ -29,7 +29,7 @@ export default async function GalleryPage() {
                 <article key={a.id} className="card">
                   {a.cover ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={fileUrl(a.cover)} alt="" className="post-image" style={{ margin: 0, borderRadius: "10px 10px 0 0", aspectRatio: "4 / 3" }} loading="lazy" />
+                    <img src={fileUrl(a.cover, 512)} alt="" className="post-image" style={{ margin: 0, borderRadius: "10px 10px 0 0", aspectRatio: "4 / 3" }} loading="lazy" />
                   ) : null}
                   <div className="card-body">
                     <h3><Link href={`/gallery/${a.id}`}>{a.title}</Link></h3>

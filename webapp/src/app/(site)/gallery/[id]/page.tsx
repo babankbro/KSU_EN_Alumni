@@ -47,7 +47,7 @@ export default async function AlbumPage({ params }: Props) {
               <figure key={p.file_id}>
                 <a href={fileUrl(p.file_id)} target="_blank" rel="noopener">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={fileUrl(p.file_id)} alt={p.caption ?? `ภาพจาก ${a.title}`} loading="lazy" />
+                  <img src={fileUrl(p.file_id, 512)} alt={p.caption ?? `ภาพจาก ${a.title}`} loading="lazy" />
                 </a>
                 {p.caption ? <figcaption>{p.caption}</figcaption> : null}
               </figure>

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { PoolClient } from "pg";
 import { getPool } from "@/lib/server/db";
 import { clientIpFrom } from "@/lib/server/client-ip";
+import { foreignOrigin } from "@/lib/server/same-origin";
 import { hit, isLimited, recordHit, LIMITS } from "@/lib/server/rate-limit";
 import { emailInUse, startMemberSession } from "@/lib/server/member-auth";
 import {
@@ -35,6 +36,7 @@ const TOO_MANY = "มีการยืนยันตัวตนด้วย�
  * alumnus who mistyped is not stuck — staff resolve it by hand.
  */
 export async function POST(req: Request) {
+  if (foreignOrigin(req)) return NextResponse.json({ error: "คำขอไม่ถูกต้อง" }, { status: 403 });
   let body: RegistrationPayload;
   try {
     body = (await req.json()) as RegistrationPayload;

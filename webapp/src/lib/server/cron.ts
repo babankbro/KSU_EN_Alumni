@@ -5,6 +5,7 @@ import { query } from "./db";
 import { deliverPending, enqueue, sendWeeklyDigests } from "./notify";
 import { pruneRateEvents } from "./rate-limit";
 import { storeUpload } from "./files";
+import { removeObject } from "./storage";
 import { formatThaiDateTime } from "./format-server";
 
 /**
@@ -122,6 +123,23 @@ async function seedDemoMedia(): Promise<number> {
   return n;
 }
 
+/**
+ * Files sent to the public /api/upload that no application ever used (the
+ * visitor gave up half way) — removed after a day so the open endpoint cannot
+ * fill the bucket, and so we do not keep photos nobody consented to.
+ */
+async function pruneOrphanUploads(): Promise<number> {
+  const rows = await query<{ id: string; object_key: string }>(
+    `DELETE FROM file_object f
+     WHERE f.uploaded_by = 'registration' AND f.created_at < now() - interval '24 hours'
+       AND NOT EXISTS (SELECT 1 FROM registration_request r WHERE r.photo_file_id = f.id)
+       AND NOT EXISTS (SELECT 1 FROM alumni a WHERE a.photo_file_id = f.id)
+     RETURNING f.id, f.object_key`,
+  );
+  for (const r of rows) await removeObject(r.object_key).catch((err) => console.error("[cron] orphan upload", r.object_key, err));
+  return rows.length;
+}
+
 export async function runCron(): Promise<Record<string, unknown>> {
   const out: Record<string, unknown> = {};
   const run = async (name: string, every: number, fn: () => Promise<unknown>) => {
@@ -137,6 +155,7 @@ export async function runCron(): Promise<Record<string, unknown>> {
   await run("event_reminders", 600, eventReminders);
   await run("weekly_digest", 7 * 86400, sendWeeklyDigests);
   await run("prune_rate_events", 86400, pruneRateEvents);
+  await run("prune_orphan_uploads", 3600, pruneOrphanUploads);
   // Delivery last, so anything queued above goes out in the same run.
   await run("deliver", 0, () => deliverPending());
   return out;

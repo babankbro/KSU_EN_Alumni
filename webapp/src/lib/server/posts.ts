@@ -1,4 +1,5 @@
 import "server-only";
+import { pageParam } from "@/lib/format";
 import { query } from "./db";
 import { fileUrl } from "./files";
 import { isMember, viewerAccount, type Viewer } from "./member-auth";
@@ -76,7 +77,7 @@ export function parseFeedFilter(sp: Record<string, string | string[] | undefined
     type: (POST_TYPES as readonly string[]).includes(type) ? type : "",
     cohort: /^\d{4}$/.test(one("cohort")) ? one("cohort") : "",
     program: /^\d+$/.test(one("program")) ? one("program") : "",
-    page: Math.max(1, Number(one("page")) || 1),
+    page: pageParam(one("page")),
   };
 }
 
@@ -138,7 +139,7 @@ function toCard(r: PostRow): PostCardData {
     visibility: r.visibility,
     isPinned: r.is_pinned,
     publishedAt: r.published_at,
-    imageUrl: r.image_file_id ? fileUrl(r.image_file_id) : null,
+    imageUrl: r.image_file_id ? fileUrl(r.image_file_id, 1024) : null,
     author: { id: r.author_id, name: r.author_name, admissionYear: r.admission_year, program: r.program, listed: r.author_listed },
     tagged: r.tagged ?? [],
     congrats: Number(r.congrats),

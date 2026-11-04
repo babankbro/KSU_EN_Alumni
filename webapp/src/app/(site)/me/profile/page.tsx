@@ -36,7 +36,7 @@ export default async function MyProfilePage() {
         <div className="member-head" style={{ marginBottom: 12 }}>
           {a.photo_file_id ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img className="member-photo" src={fileUrl(a.photo_file_id)} alt="รูปโปรไฟล์ของคุณ" />
+            <img className="member-photo" src={fileUrl(a.photo_file_id, 256)} alt="รูปโปรไฟล์ของคุณ" />
           ) : (
             <div className="member-photo-ph" aria-hidden="true">{a.first_name_th.slice(0, 2)}</div>
           )}

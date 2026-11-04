@@ -51,7 +51,7 @@ export default async function AdminAlbumPage({ params }: { params: Promise<{ id:
             {photos.map((p) => (
               <figure key={p.id}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={fileUrl(p.file_id)} alt={p.caption ?? ""} loading="lazy" />
+                <img src={fileUrl(p.file_id, 512)} alt={p.caption ?? ""} loading="lazy" />
                 <form action={updatePhotoAction} className="inline-actions" style={{ marginTop: 6 }}>
                   <input type="hidden" name="photoId" value={p.id} />
                   <label className="sr-only" htmlFor={`cap${p.id}`}>คำบรรยาย</label>

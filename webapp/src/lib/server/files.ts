@@ -97,7 +97,10 @@ export async function storeUpload(
   return { id: row.id, objectKey: key, size: buffer.length };
 }
 
-/** URL the browser uses for a stored file; served by /api/files/[id]. */
-export function fileUrl(id: string): string {
-  return `/api/files/${id}`;
+/**
+ * URL the browser uses for a stored file; served by /api/files/[id].
+ * `width` (64, 128, 256, 512 or 1024) asks for a resized WebP of an image.
+ */
+export function fileUrl(id: string, width?: 64 | 128 | 256 | 512 | 1024): string {
+  return width ? `/api/files/${id}?w=${width}` : `/api/files/${id}`;
 }

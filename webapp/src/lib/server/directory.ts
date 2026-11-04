@@ -1,4 +1,5 @@
 import "server-only";
+import { pageParam } from "@/lib/format";
 import { query } from "./db";
 import { cached } from "./memo";
 import { fileUrl } from "./files";
@@ -42,7 +43,7 @@ export function parseDirFilter(sp: Record<string, string | string[] | undefined>
     province: arr(sp.province),
     category: arr(sp.category),
     skill: arr(sp.skill),
-    page: Math.max(1, Number(one("page")) || 1),
+    page: pageParam(one("page")),
   };
 }
 
@@ -210,7 +211,7 @@ export function toPerson(r: Row, viewer: Viewer): DirectoryPerson {
     profileUpdatedAt: r.profile_updated_at,
     stale: r.stale,
     isNotable: r.is_notable,
-    photoUrl: r.photo_file_id && see("photo") ? fileUrl(r.photo_file_id) : null,
+    photoUrl: r.photo_file_id && see("photo") ? fileUrl(r.photo_file_id, 256) : null,
     province: see("province") ? r.province : null,
     organization: see("workplace") ? r.current_organization : null,
     position: see("workplace") ? r.current_position : null,

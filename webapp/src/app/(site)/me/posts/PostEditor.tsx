@@ -48,7 +48,7 @@ export default function PostEditor({ post, trusted }: { post?: EditablePost; tru
         <label htmlFor="post-image">รูปประกอบ (JPG, PNG, WebP ไม่เกิน 5 MB)</label>
         {post?.imageFileId ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={fileUrl(post.imageFileId)} alt="รูปประกอบปัจจุบัน" className="post-image-preview" />
+          <img src={fileUrl(post.imageFileId, 512)} alt="รูปประกอบปัจจุบัน" className="post-image-preview" />
         ) : null}
         <input id="post-image" name="image" type="file" accept="image/jpeg,image/png,image/webp" />
       </div>
