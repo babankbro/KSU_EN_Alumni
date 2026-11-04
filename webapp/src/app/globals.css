@@ -1024,6 +1024,11 @@ button {
   padding: 18px;
   border-bottom: 1px solid var(--line);
 }
+/* Without a cover the date would land in the 210px image column and squeeze
+   the text into 74px. */
+.event-no-image {
+  grid-template-columns: 74px 1fr;
+}
 .event-image {
   width: 210px;
   height: 132px;

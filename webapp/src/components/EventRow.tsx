@@ -9,7 +9,7 @@ export default function EventRow({ e }: { e: EventData }) {
   const end = e.endsAt ? bkkParts(e.endsAt) : null;
   const reg = registrationState(e);
   return (
-    <div className="event">
+    <div className={e.coverUrl ? "event" : "event event-no-image"}>
       {e.coverUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img className="event-image" src={e.coverUrl} alt="" loading="lazy" />
