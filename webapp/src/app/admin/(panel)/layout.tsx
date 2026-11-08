@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/server/auth";
 import { query } from "@/lib/server/db";
 import { logoutAction } from "../actions";
 import AdminNav from "@/components/admin/AdminNav";
+import BrandMark from "@/components/BrandMark";
 
 const ROLE_LABEL = { admin: "ผู้ดูแลระบบ", editor: "ผู้แก้ไขเนื้อหา", faculty: "อาจารย์ / กรรมการ" } as const;
 
@@ -58,7 +59,7 @@ export default async function AdminPanelLayout({ children }: { children: React.R
     <div className="admin-shell">
       <aside className="admin-side">
         <Link href="/admin" className="admin-brand">
-          <span className="brand-mark" aria-hidden="true">KSU</span>
+          <BrandMark />
           <span>
             ระบบจัดการ
             <small>ศิษย์เก่าวิศวกรรมศาสตร์</small>

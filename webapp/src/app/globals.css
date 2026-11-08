@@ -344,39 +344,59 @@ button {
   gap: 20px;
   min-height: 84px; /* §5.2 — 80–88px */
 }
+/* The brand never shrinks or wraps: the nav gives way instead. */
 .brand {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex: none;
+  white-space: nowrap;
   text-decoration: none;
 }
 .brand:hover {
   text-decoration: none;
 }
 .brand-mark {
-  width: 46px;
-  height: 46px;
+  width: 48px;
+  height: 48px;
   flex: none;
   border-radius: 10px;
+  border: 2px solid var(--gold-500);
   background: linear-gradient(140deg, var(--maroon-700), var(--maroon-900));
   color: var(--gold-500);
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   font-weight: 800;
-  font-size: 1rem;
+  font-size: 0.86rem;
+  line-height: 1;
   letter-spacing: 0.5px;
+}
+.brand-mark small {
+  margin-top: 3px;
+  color: #fff;
+  font-size: 0.5rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+}
+.brand-over {
+  display: block;
+  color: var(--gold-600);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  line-height: 1.4;
 }
 .brand-text strong {
   display: block;
   color: var(--maroon-800);
-  font-size: 1.02rem;
+  font-size: 1.14rem;
+  font-weight: 800;
   line-height: 1.25;
 }
-.brand-text span {
-  display: block;
-  color: var(--muted);
-  font-size: 0.76rem;
-  letter-spacing: 0.04em;
+.brand-short {
+  display: none;
 }
 
 .nav-toggle {
@@ -386,6 +406,7 @@ button {
   border-radius: 8px;
   padding: 8px 12px;
   color: var(--maroon-800);
+  white-space: nowrap;
 }
 .main-nav ul {
   display: flex;
@@ -1552,6 +1573,38 @@ button {
     grid-template-columns: 1fr;
   }
   .topbar-contact {
+    display: none;
+  }
+  .brand-long {
+    display: none;
+  }
+  .brand-short {
+    display: inline;
+  }
+  .brand-mark {
+    width: 42px;
+    height: 42px;
+  }
+  /* The brand no longer shrinks, so the rest of the bar gives way. */
+  .header-inner {
+    gap: 8px;
+  }
+  .nav-toggle {
+    padding: 8px 10px;
+  }
+  .nav-toggle-label {
+    display: none;
+  }
+  .header-cta .btn {
+    padding-inline: 10px;
+    white-space: nowrap;
+  }
+}
+@media (max-width: 360px) {
+  .brand {
+    gap: 8px;
+  }
+  .brand-over {
     display: none;
   }
 }

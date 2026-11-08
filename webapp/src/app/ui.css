@@ -34,7 +34,7 @@
 .admin-brand:hover {
   text-decoration: none;
 }
-.admin-brand small {
+.admin-brand > span:last-child small {
   display: block;
   color: rgba(255, 255, 255, 0.6);
   font-size: 12px;

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import BrandMark from "./BrandMark";
 
 /**
  * Visual Design §5.2 — the specified menu.
@@ -37,12 +38,15 @@ export default function SiteHeader({
     <header className="site-header">
       <div className="wrap header-inner">
         <Link className="brand" href="/">
-          <span className="brand-mark" aria-hidden="true">
-            KSU
-          </span>
+          <BrandMark />
           <span className="brand-text">
-            <strong>ศิษย์เก่าวิศวกรรมศาสตร์</strong>
-            <span>KSU ENGINEERING ALUMNI</span>
+            <span className="brand-over">
+              <span className="brand-long">ALUMNI · </span>KSU ENGINEERING
+            </span>
+            <strong>
+              <span className="brand-long">ศิษย์เก่าวิศวกรรมศาสตร์</span>
+              <span className="brand-short">ศิษย์เก่าวิศวฯ</span>
+            </strong>
           </span>
         </Link>
 
@@ -50,9 +54,10 @@ export default function SiteHeader({
           className="nav-toggle"
           aria-expanded={open}
           aria-controls="mainNav"
+          aria-label="เมนู"
           onClick={() => setOpen((v) => !v)}
         >
-          ☰ เมนู
+          ☰<span className="nav-toggle-label"> เมนู</span>
         </button>
 
         <nav

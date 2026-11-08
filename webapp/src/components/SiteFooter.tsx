@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Settings } from "@/lib/server/content";
+import BrandMark from "./BrandMark";
 
 export default function SiteFooter({ settings }: { settings: Settings }) {
   return (
@@ -8,7 +9,7 @@ export default function SiteFooter({ settings }: { settings: Settings }) {
         <div className="footer-grid">
           <div>
             <div className="footer-brand">
-              <span className="brand-mark" aria-hidden="true">KSU</span>
+              <BrandMark />
               <div>
                 <strong>ศิษย์เก่าวิศวกรรมศาสตร์</strong>
                 <br />
