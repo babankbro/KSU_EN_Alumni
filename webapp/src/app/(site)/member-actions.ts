@@ -13,7 +13,7 @@ import {
   startMemberSession,
 } from "@/lib/server/member-auth";
 import { enqueue } from "@/lib/server/notify";
-import { login as staffLogin } from "@/lib/server/auth";
+import { ensureBootstrapAdmin, login as staffLogin } from "@/lib/server/auth";
 
 import type { FormState } from "@/lib/form-state";
 
@@ -34,6 +34,9 @@ export async function memberLoginAction(_p: FormState, fd: FormData): Promise<Fo
 
   // Staff who use this page instead of /admin/login: a staff email without a
   // member account goes through the staff login (its own lockout and audit).
+  // On a fresh install the first admin only exists once bootstrapped, so do
+  // that first or the bootstrap email is never recognised here.
+  await ensureBootstrapAdmin();
   const [staff] = await query<{ n: string }>(
     `SELECT count(*) AS n FROM admin_user u
      WHERE lower(u.email) = lower($1) AND u.is_active
